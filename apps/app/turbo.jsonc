@@ -1,0 +1,14 @@
+{
+	"$schema": "../../node_modules/turbo/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		// Running Clippy and tests on a Tauri application requires
+		// the frontend to be built at least once first
+		"lint": {
+			"dependsOn": ["@oxide/app-frontend#build"]
+		},
+		"test": {
+			"dependsOn": ["@oxide/app-frontend#build"]
+		}
+	}
+}
