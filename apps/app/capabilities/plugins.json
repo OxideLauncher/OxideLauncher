@@ -22,7 +22,11 @@
 
 		{
 			"identifier": "http:default",
-			"allow": [{ "url": "https://modrinth.com/*" }, { "url": "https://*.modrinth.com/*" }]
+			"allow": [
+				{ "url": "https://modrinth.com/*" },
+				{ "url": "https://*.modrinth.com/*" },
+				{ "url": "https://raw.githubusercontent.com/OxideLauncher/*" }
+			]
 		},
 
 		"auth:default",

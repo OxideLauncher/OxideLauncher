@@ -10,11 +10,11 @@ import ProviderToggle from '@/components/ui/ProviderToggle.vue'
 import RecentWorldsList from '@/components/ui/world/RecentWorldsList.vue'
 import {
     normalizeCurseForgeResult,
-    useContentProvider,
     type NormalizedSearchResult,
+    useContentProvider,
 } from '@/composables/useContentProvider'
 import { get_search_results } from '@/helpers/cache.js'
-import { get_featured_mods, type CurseForgeMod } from '@/helpers/curseforge'
+import { type CurseForgeMod, get_featured_mods } from '@/helpers/curseforge'
 import { profile_listener } from '@/helpers/events'
 import { list } from '@/helpers/profile.js'
 import type { GameInstance } from '@/helpers/types'
@@ -27,7 +27,7 @@ const breadcrumbs = useBreadcrumbs()
 
 breadcrumbs.setRootContext({ name: 'Home', link: route.path })
 
-const { provider, isModrinth, isCurseForge } = useContentProvider()
+const { provider, isModrinth } = useContentProvider()
 
 const messages = defineMessages({
 	welcomeBack: {
@@ -128,10 +128,22 @@ async function fetchCurseForgeFeatured() {
 		)
 
 		// If no modpacks in popular, try featured
-		const finalModpacks =
+		let finalModpacks =
 			modpacks.length > 0
 				? modpacks.slice(0, 10)
 				: response.featured.filter((mod: CurseForgeMod) => mod.classId === 4471).slice(0, 10)
+
+		// If still no modpacks, fetch popular modpacks via search API
+		if (finalModpacks.length === 0) {
+			const { search_mods, ClassId } = await import('@/helpers/curseforge')
+			const modpackSearch = await search_mods({
+				class_id: ClassId.Modpacks,
+				sort_field: 'Popularity',
+				sort_order: 'desc',
+				page_size: 10,
+			})
+			finalModpacks = modpackSearch.data
+		}
 
 		const finalMods = mods.length > 0 ? mods.slice(0, 10) : response.featured.slice(0, 10)
 

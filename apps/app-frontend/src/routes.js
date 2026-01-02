@@ -36,6 +36,14 @@ export default new createRouter({
 			},
 		},
 		{
+			path: '/news',
+			name: 'News',
+			component: Pages.News,
+			meta: {
+				breadcrumb: [{ name: 'News' }],
+			},
+		},
+		{
 			path: '/skins',
 			name: 'Skins',
 			component: Pages.Skins,
@@ -139,6 +147,19 @@ export default new createRouter({
 					meta: {
 						useContext: true,
 						breadcrumb: [{ name: '?CfProject', link: '/cf-project/{id}/' }, { name: 'Files' }],
+					},
+				},
+				{
+					path: 'version/:version',
+					name: 'CfVersion',
+					component: () => import('@/pages/cf-project/Version.vue'),
+					meta: {
+						useContext: true,
+						breadcrumb: [
+							{ name: '?CfProject', link: '/cf-project/{id}/' },
+							{ name: 'Files', link: '/cf-project/{id}/versions' },
+							{ name: '?CfVersion' },
+						],
 					},
 				},
 				{

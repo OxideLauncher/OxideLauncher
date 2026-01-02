@@ -30,7 +30,6 @@ import {
     ButtonStyled,
     commonMessages,
     defineMessages,
-    NewsArticleCard,
     NotificationPanel,
     OverflowMenu,
     ProgressSpinner,
@@ -76,6 +75,7 @@ import { get_user } from '@/helpers/cache.js'
 import { command_listener, warning_listener } from '@/helpers/events.js'
 import { useFetch } from '@/helpers/fetch.js'
 import { cancelLogin, get as getCreds, login, logout } from '@/helpers/mr_auth.ts'
+import { prefetchNews } from '@/helpers/news'
 import { list } from '@/helpers/profile.js'
 import { get as getSettings, set as setSettings } from '@/helpers/settings.ts'
 import { get_opening_command, initialize_state } from '@/helpers/state'
@@ -121,7 +121,6 @@ providePageContext({
 	hierarchicalSidebarAvailable: ref(true),
 	showAds: ref(false),
 })
-const news = ref([])
 const availableSurvey = ref(false)
 
 const urlModal = ref(null)
@@ -305,23 +304,10 @@ async function setupApp() {
 			)
 		})
 
-	useFetch(`https://modrinth.com/news/feed/articles.json`, 'news', true)
-		.then((response) => response.json())
-		.then((res) => {
-			if (res && res.articles) {
-				// Format expected by NewsArticleCard component.
-				news.value = res.articles
-					.map((article) => ({
-						...article,
-						path: article.link,
-						thumbnail: article.thumbnail,
-						title: article.title,
-						summary: article.summary,
-						date: article.date,
-					}))
-					.slice(0, 4)
-			}
-		})
+	// Prefetch news articles for faster loading when the user opens the News page
+	prefetchNews().catch((error) => {
+		console.warn('Failed to prefetch news articles:', error)
+	})
 
 	get_opening_command().then(handleCommand)
 	fetchCredentials()
@@ -786,6 +772,9 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			>
 				<CompassIcon />
 			</NavButton>
+			<NavButton v-tooltip.right="'News'" to="/news">
+				<NewspaperIcon />
+			</NavButton>
 			<NavButton v-tooltip.right="'Skins (Beta)'" to="/skins">
 				<ChangeSkinIcon />
 			</NavButton>
@@ -1047,21 +1036,6 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 						<suspense>
 							<AccountsCard ref="accounts" mode="small" />
 						</suspense>
-					</div>
-					<div v-if="news && news.length > 0" class="p-4 pr-1 flex flex-col items-center">
-						<h3 class="text-base mb-4 text-primary font-medium m-0 text-left w-full">News</h3>
-						<div class="space-y-4 flex flex-col items-center w-full">
-							<NewsArticleCard
-								v-for="(item, index) in news"
-								:key="`news-${index}`"
-								:article="item"
-							/>
-							<ButtonStyled color="brand" size="large">
-								<a href="https://modrinth.com/news" target="_blank" class="my-4">
-									<NewspaperIcon /> View all news
-								</a>
-							</ButtonStyled>
-						</div>
 					</div>
 				</div>
 			</div>

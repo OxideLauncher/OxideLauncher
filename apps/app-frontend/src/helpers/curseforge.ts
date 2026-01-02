@@ -274,6 +274,28 @@ export function projectTypeToClassId(projectType: string): number | null {
 	}
 }
 
+// Convert project type to CurseForge URL class slug
+export function getClassSlugFromProjectType(projectType: string): string {
+	switch (projectType) {
+		case 'mod':
+			return 'mc-mods'
+		case 'modpack':
+			return 'modpacks'
+		case 'resourcepack':
+			return 'texture-packs'
+		case 'shader':
+			return 'shaders'
+		case 'datapack':
+			return 'data-packs'
+		case 'plugin':
+			return 'bukkit-plugins'
+		case 'world':
+			return 'worlds'
+		default:
+			return 'mc-mods'
+	}
+}
+
 // API functions
 export async function search_mods(
 	params: ModSearchParams,
@@ -342,6 +364,22 @@ export async function get_game_versions(): Promise<GameVersionsByType[]> {
 
 export async function get_game_version_types(): Promise<GameVersionType[]> {
 	return await invoke('plugin:curseforge|curseforge_get_game_version_types', {})
+}
+
+export async function get_file_download_url(modId: number, fileId: number): Promise<string> {
+	return await invoke('plugin:curseforge|curseforge_get_file_download_url', { modId, fileId })
+}
+
+export async function install_file(
+	profilePath: string,
+	modId: number,
+	fileId: number,
+): Promise<string> {
+	return await invoke('plugin:curseforge|curseforge_install_file', {
+		profilePath,
+		modId,
+		fileId,
+	})
 }
 
 // Helper to convert CurseForge mod to a normalized format similar to Modrinth projects
@@ -671,6 +709,8 @@ export async function normalizeCfProject(
 export function normalizeCfFile(
 	file: CurseForgeFile,
 	modId: number,
+	projectSlug: string,
+	projectType: string,
 ): NormalizedCfVersion {
 	// Extract loaders from sortable game versions or modules
 	const loaders = new Set<string>()
@@ -724,6 +764,9 @@ export function normalizeCfFile(
 		dependency_type: getDependencyType(dep.relationType),
 	}))
 
+	// Build proper CurseForge URL with correct class slug
+	const classSlug = getClassSlugFromProjectType(projectType)
+
 	return {
 		id: `cf-${file.id}`,
 		project_id: `cf-${modId}`,
@@ -732,7 +775,7 @@ export function normalizeCfFile(
 		name: file.displayName,
 		version_number: file.displayName,
 		changelog: undefined,
-		changelog_url: `https://www.curseforge.com/minecraft/mc-mods/${modId}/files/${file.id}`,
+		changelog_url: `https://www.curseforge.com/minecraft/${classSlug}/${projectSlug}/files/${file.id}`,
 		date_published: file.fileDate,
 		downloads: file.downloadCount,
 		version_type: getReleaseType(file.releaseType),
@@ -764,8 +807,10 @@ export async function fetchNormalizedCfProject(modId: number): Promise<{
 	// Normalize the project
 	const project = await normalizeCfProject(mod, description)
 
-	// Normalize files to versions
-	const versions = filesResponse.data.map((file) => normalizeCfFile(file, modId))
+	// Normalize files to versions (pass project slug and type for correct URLs)
+	const versions = filesResponse.data.map((file) =>
+		normalizeCfFile(file, modId, mod.slug, project.project_type),
+	)
 
 	// Create simplified members from authors
 	const members = mod.authors.map((author) => ({
@@ -778,4 +823,81 @@ export async function fetchNormalizedCfProject(modId: number): Promise<{
 	}))
 
 	return { project, versions, members }
+}
+
+// Install CurseForge file dependencies
+export async function installCfDependencies(
+	profilePath: string,
+	version: NormalizedCfVersion,
+	profile: { loader: string; game_version: string },
+	checkInstalled: (projectId: string) => Promise<boolean>,
+): Promise<void> {
+	for (const dep of version.dependencies) {
+		if (dep.dependency_type !== 'required') continue
+
+		// Extract the CurseForge mod ID from the project_id (format: "cf-12345")
+		const cfModIdMatch = dep.project_id?.match(/^cf-(\d+)$/)
+		if (!cfModIdMatch) continue
+
+		const depModId = parseInt(cfModIdMatch[1])
+
+		// Check if already installed
+		if (dep.project_id && (await checkInstalled(dep.project_id))) continue
+
+		try {
+			// Fetch available files for the dependency
+			const filesResponse = await get_mod_files(depModId, profile.game_version, profile.loader)
+
+			if (filesResponse.data.length === 0) {
+				// Try without loader filter
+				const allFilesResponse = await get_mod_files(depModId, profile.game_version)
+				if (allFilesResponse.data.length > 0) {
+					const latestFile = allFilesResponse.data[0]
+					await install_file(profilePath, depModId, latestFile.id)
+				}
+			} else {
+				const latestFile = filesResponse.data[0]
+				await install_file(profilePath, depModId, latestFile.id)
+			}
+		} catch (e) {
+			console.warn(`Failed to install CurseForge dependency ${depModId}:`, e)
+		}
+	}
+}
+
+// Find the preferred CurseForge version for a profile
+export function findPreferredCfVersion(
+	versions: NormalizedCfVersion[],
+	profile: { loader: string; game_version: string },
+): NormalizedCfVersion | undefined {
+	// First try to find an exact match for both game version and loader
+	let version = versions.find(
+		(v) => v.game_versions.includes(profile.game_version) && v.loaders.includes(profile.loader),
+	)
+
+	if (!version) {
+		// Fall back to just game version match
+		version = versions.find((v) => v.game_versions.includes(profile.game_version))
+	}
+
+	if (!version && versions.length > 0) {
+		// Return the latest version as a last resort
+		version = versions[0]
+	}
+
+	return version
+}
+
+// Check if a CurseForge version is compatible with a profile
+export function isCfVersionCompatible(
+	version: NormalizedCfVersion,
+	profile: { loader: string; game_version: string },
+): boolean {
+	const gameVersionMatch = version.game_versions.includes(profile.game_version)
+	const loaderMatch =
+		version.loaders.length === 0 || // No loader requirement
+		version.loaders.includes(profile.loader) ||
+		version.loaders.includes('datapack')
+
+	return gameVersionMatch && loaderMatch
 }

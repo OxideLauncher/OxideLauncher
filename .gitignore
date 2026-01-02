@@ -67,6 +67,7 @@ app-playground-data/*
 .claude
 claude.md
 status.md
+reference/
 
 # labrinth demo fixtures
 apps/labrinth/fixtures/demo

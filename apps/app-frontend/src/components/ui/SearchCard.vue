@@ -79,7 +79,7 @@
 					<span class="text-secondary">downloads</span>
 				</span>
 			</div>
-			<div class="flex items-center gap-2">
+			<div v-if="project.source !== 'curseforge'" class="flex items-center gap-2">
 				<HeartIcon class="shrink-0" />
 				<span>
 					{{ formatNumber(project.follows ?? project.followers) }}

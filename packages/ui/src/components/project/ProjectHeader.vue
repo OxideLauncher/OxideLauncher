@@ -8,6 +8,7 @@
 		</template>
 		<template #title-suffix>
 			<ProjectStatusBadge v-if="member || project.status !== 'approved'" :status="project.status" />
+			<slot name="badge" />
 		</template>
 		<template #summary>
 			{{ project.description }}
@@ -17,12 +18,14 @@
 				v-tooltip="
 					`${formatNumber(project.downloads, false)} download${project.downloads !== 1 ? 's' : ''}`
 				"
-				class="flex items-center gap-2 border-0 border-r border-solid border-divider pr-4 font-semibold cursor-help"
+				class="flex items-center gap-2 border-0 border-solid border-divider pr-4 font-semibold cursor-help"
+				:class="{ 'border-r': !hideFollowers || project.categories.length > 0 }"
 			>
 				<DownloadIcon class="h-6 w-6 text-secondary" />
 				{{ formatNumber(project.downloads) }}
 			</div>
 			<div
+				v-if="!hideFollowers"
 				v-tooltip="
 					`${formatNumber(project.followers, false)} follower${project.downloads !== 1 ? 's' : ''}`
 				"
@@ -68,9 +71,11 @@ withDefaults(
 	defineProps<{
 		project: Project
 		member?: boolean
+		hideFollowers?: boolean
 	}>(),
 	{
 		member: false,
+		hideFollowers: false,
 	},
 )
 </script>

@@ -1110,6 +1110,93 @@ impl Profile {
         Ok(path)
     }
 
+    /// Add a CurseForge project to a profile
+    #[tracing::instrument(skip(pool))]
+    pub async fn add_curseforge_project(
+        profile_path: &str,
+        mod_id: i32,
+        file_id: i32,
+        pool: &SqlitePool,
+        fetch_semaphore: &FetchSemaphore,
+        io_semaphore: &IoSemaphore,
+    ) -> crate::Result<String> {
+        use crate::api::curseforge;
+
+        let file = curseforge::get_single_file(mod_id, file_id).await.map_err(
+            |e| {
+                crate::ErrorKind::InputError(format!(
+                    "Unable to fetch CurseForge file {file_id}: {e}"
+                ))
+            },
+        )?;
+
+        if !file.is_available {
+            return Err(crate::ErrorKind::InputError(
+                "This file is not available for download".to_string(),
+            )
+            .into());
+        }
+
+        let download_url = if let Some(url) = &file.download_url {
+            url.clone()
+        } else {
+            curseforge::get_download_url(mod_id, file_id)
+                .await
+                .map_err(|e| {
+                    crate::ErrorKind::InputError(format!(
+                        "Unable to get download URL for CurseForge file: {e}. The mod author may have disabled third-party downloads."
+                    ))
+                })?
+        };
+
+        let sha1_hash = file.get_sha1().map(|s| s.to_string());
+
+        let bytes = util::fetch::fetch(
+            &download_url,
+            sha1_hash.as_deref(),
+            fetch_semaphore,
+            pool,
+        )
+        .await?;
+
+        let project_type = Self::infer_project_type_from_curseforge_file(&file);
+
+        let path = Self::add_project_bytes(
+            profile_path,
+            &file.file_name,
+            bytes,
+            sha1_hash.as_deref(),
+            project_type,
+            io_semaphore,
+            pool,
+        )
+        .await?;
+
+        Ok(path)
+    }
+
+    fn infer_project_type_from_curseforge_file(
+        file: &crate::api::curseforge::CurseForgeFile,
+    ) -> Option<ProjectType> {
+        let filename = file.file_name.to_lowercase();
+
+        if filename.ends_with(".jar") {
+            Some(ProjectType::Mod)
+        } else if filename.ends_with(".zip") {
+            if file
+                .game_versions
+                .iter()
+                .any(|v| v.to_lowercase().contains("data"))
+            {
+                Some(ProjectType::DataPack)
+            } else {
+                Some(ProjectType::ResourcePack)
+            }
+        } else {
+            None
+        }
+    }
+
     #[tracing::instrument(skip(bytes))]
 
     pub async fn add_project_bytes(

@@ -530,6 +530,17 @@ pub async fn get_mc_version_types() -> crate::Result<Vec<GameVersionType>> {
     get_game_version_types(&state.api_semaphore, &state.pool).await
 }
 
+/// Get download URL for a CurseForge file (using global state)
+#[tracing::instrument]
+pub async fn get_download_url(
+    mod_id: i32,
+    file_id: i32,
+) -> crate::Result<String> {
+    let state = State::get().await?;
+    get_file_download_url(mod_id, file_id, &state.api_semaphore, &state.pool)
+        .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

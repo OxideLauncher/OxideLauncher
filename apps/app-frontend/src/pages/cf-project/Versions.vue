@@ -5,8 +5,7 @@
 			:game-versions="gameVersions"
 			:versions="normalizedVersions"
 			:project="project"
-			:version-link="(version) => version.changelog_url"
-			version-link-external
+			:version-link="(version) => `/cf-project/${project.curseforge_id}/version/${version.curseforge_file_id}${instance ? `?i=${encodeURIComponent(instance.path)}` : ''}`"
 		>
 			<template #actions="{ version }">
 				<ButtonStyled circular type="transparent">

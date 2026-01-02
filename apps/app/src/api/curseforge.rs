@@ -23,6 +23,8 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             curseforge_get_mod_description,
             curseforge_get_game_versions,
             curseforge_get_game_version_types,
+            curseforge_get_file_download_url,
+            curseforge_install_file,
         ])
         .build()
 }
@@ -126,4 +128,30 @@ pub async fn curseforge_get_game_versions() -> Result<Vec<GameVersionsByType>> {
 pub async fn curseforge_get_game_version_types() -> Result<Vec<GameVersionType>>
 {
     Ok(theseus::curseforge::get_mc_version_types().await?)
+}
+
+/// Get file download URL
+#[tauri::command]
+pub async fn curseforge_get_file_download_url(
+    mod_id: i32,
+    file_id: i32,
+) -> Result<String> {
+    Ok(theseus::curseforge::get_download_url(mod_id, file_id).await?)
+}
+
+/// Install a CurseForge project to a profile
+#[tauri::command]
+pub async fn curseforge_install_file(
+    profile_path: String,
+    mod_id: i32,
+    file_id: i32,
+) -> Result<String> {
+    Ok(
+        theseus::profile::add_curseforge_project(
+            &profile_path,
+            mod_id,
+            file_id,
+        )
+        .await?,
+    )
 }

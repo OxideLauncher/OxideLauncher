@@ -394,6 +394,30 @@ pub async fn add_project_from_version(
     Ok(project_path)
 }
 
+/// Add a CurseForge project to a profile
+/// Returns the relative path to the project as a ProjectPathId
+#[tracing::instrument]
+pub async fn add_curseforge_project(
+    profile_path: &str,
+    mod_id: i32,
+    file_id: i32,
+) -> crate::Result<String> {
+    let state = State::get().await?;
+    let project_path = Profile::add_curseforge_project(
+        profile_path,
+        mod_id,
+        file_id,
+        &state.pool,
+        &state.fetch_semaphore,
+        &state.io_semaphore,
+    )
+    .await?;
+
+    emit_profile(profile_path, ProfilePayloadType::Edited).await?;
+
+    Ok(project_path)
+}
+
 /// Add a project from an FS path
 /// Uses and returns the relative path to the project as a ProjectPathId
 #[tracing::instrument]

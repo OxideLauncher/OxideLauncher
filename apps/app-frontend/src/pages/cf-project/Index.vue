@@ -45,7 +45,7 @@
 				>
 					<ProjectBackgroundGradient :project="normalizedProject" />
 				</Teleport>
-				<ProjectHeader :project="normalizedProject" @contextmenu.prevent.stop="handleRightClick">
+				<ProjectHeader :project="normalizedProject" hide-followers @contextmenu.prevent.stop="handleRightClick">
 					<template #badge>
 						<span
 							class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold bg-[#F16436]/20 text-[#F16436]"
@@ -178,15 +178,28 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { computed, ref, shallowRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 import ContextMenu from '@/components/ui/ContextMenu.vue'
 import InstanceIndicator from '@/components/ui/InstanceIndicator.vue'
 import NavTabs from '@/components/ui/NavTabs.vue'
-import { fetchNormalizedCfProject } from '@/helpers/curseforge.ts'
-import { get as getInstance, get_projects as getInstanceProjects } from '@/helpers/profile'
+import { trackEvent } from '@/helpers/analytics'
+import {
+    fetchNormalizedCfProject,
+    findPreferredCfVersion,
+    installCfDependencies,
+    install_file as installCfFile,
+    isCfVersionCompatible,
+} from '@/helpers/curseforge.ts'
+import {
+    check_installed,
+    get as getInstance,
+    get_projects as getInstanceProjects,
+    remove_project,
+} from '@/helpers/profile'
 import { get_game_versions, get_loaders } from '@/helpers/tags'
 import { useBreadcrumbs } from '@/store/breadcrumbs'
+import { useInstall } from '@/store/install.js'
 import { useTheming } from '@/store/state.js'
 
 dayjs.extend(relativeTime)
@@ -211,7 +224,6 @@ const messages = defineMessages({
 const { formatMessage } = useVIntl()
 const { handleError } = injectNotificationManager()
 const route = useRoute()
-const router = useRouter()
 const breadcrumbs = useBreadcrumbs()
 const themeStore = useTheming()
 
@@ -323,16 +335,92 @@ watch(
 )
 
 async function install(fileId) {
-	// CurseForge installation is not yet supported via API
-	// Open CurseForge page in browser for manual installation
+	if (!normalizedProject.value) return
+
 	installing.value = true
 	try {
-		// Open download URL in browser
-		let downloadUrl = curseforgeUrl.value
-		if (fileId) {
-			downloadUrl = `${curseforgeUrl.value}/files/${fileId}`
+		const modId = normalizedProject.value.curseforge_id
+
+		// If we have an instance context, install directly
+		if (instance.value) {
+			let version
+			if (fileId) {
+				version = versions.value.find((v) => v.curseforge_file_id === fileId)
+			} else {
+				version = findPreferredCfVersion(versions.value, instance.value)
+			}
+
+			if (!version) {
+				version = versions.value[0]
+			}
+
+			if (!version) {
+				handleError('No compatible version found')
+				installing.value = false
+				return
+			}
+
+			// Check if compatible, show warning if not
+			if (!isCfVersionCompatible(version, instance.value)) {
+				const installStore = useInstall()
+				installStore.showIncompatibilityWarningModal(
+					instance.value,
+					normalizedProject.value,
+					versions.value,
+					version,
+					async (installedVersionId) => {
+						installed.value = true
+						installedVersion.value = installedVersionId
+					},
+				)
+				installing.value = false
+				return
+			}
+
+			// Remove existing version if updating
+			if (instanceProjects.value) {
+				for (const [path, file] of Object.entries(instanceProjects.value)) {
+					if (
+						file.metadata &&
+						(file.metadata.project_id === normalizedProject.value.id ||
+							file.metadata.curseforge_id === normalizedProject.value.curseforge_id)
+					) {
+						await remove_project(instance.value.path, path)
+					}
+				}
+			}
+
+			// Install the file
+			await installCfFile(instance.value.path, modId, version.curseforge_file_id)
+
+			// Install dependencies
+			await installCfDependencies(
+				instance.value.path,
+				version,
+				instance.value,
+				async (projectId) => check_installed(instance.value.path, projectId),
+			)
+
+			trackEvent('ProjectInstall', {
+				loader: instance.value.loader,
+				game_version: instance.value.game_version,
+				id: normalizedProject.value.id,
+				project_type: normalizedProject.value.project_type,
+				version_id: version.id,
+				title: normalizedProject.value.title,
+				source: 'curseforge',
+			})
+
+			installed.value = true
+			installedVersion.value = version.id
+		} else {
+			// No instance context - show modal to select instance
+			const installStore = useInstall()
+			installStore.showModInstallModal(normalizedProject.value, versions.value, (versionId) => {
+				installed.value = true
+				installedVersion.value = versionId
+			})
 		}
-		await openUrl(downloadUrl)
 	} catch (err) {
 		handleError(err)
 	} finally {

@@ -1,11 +1,11 @@
 <script setup>
 import {
-	CheckIcon,
-	DownloadIcon,
-	PlusIcon,
-	RightArrowIcon,
-	UploadIcon,
-	XIcon,
+    CheckIcon,
+    DownloadIcon,
+    PlusIcon,
+    RightArrowIcon,
+    UploadIcon,
+    XIcon,
 } from '@oxide/assets'
 import { Avatar, Button, Card, injectNotificationManager } from '@oxide/ui'
 import { convertFileSrc } from '@tauri-apps/api/core'
@@ -16,16 +16,22 @@ import { useRouter } from 'vue-router'
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
 import { trackEvent } from '@/helpers/analytics'
 import {
-	add_project_from_version as installMod,
-	check_installed,
-	create,
-	get,
-	list,
+    findPreferredCfVersion,
+    installCfDependencies,
+    install_file as installCfFile,
+    isCfVersionCompatible,
+} from '@/helpers/curseforge.ts'
+import {
+    check_installed,
+    create,
+    get,
+    add_project_from_version as installMod,
+    list,
 } from '@/helpers/profile'
 import {
-	findPreferredVersion,
-	installVersionDependencies,
-	isVersionCompatible,
+    findPreferredVersion,
+    installVersionDependencies,
+    isVersionCompatible,
 } from '@/store/install.js'
 
 const { handleError } = injectNotificationManager()
@@ -47,19 +53,25 @@ const creatingInstance = ref(false)
 
 const profiles = ref([])
 
-const shownProfiles = computed(() =>
-	profiles.value
+const shownProfiles = computed(() => {
+	if (!project.value || !versions.value) return []
+
+	return profiles.value
 		.filter((profile) => {
 			return profile.name.toLowerCase().includes(searchFilter.value.toLowerCase())
 		})
 		.filter((profile) => {
+			const isCurseForge = project.value?.source === 'curseforge'
 			const version = {
 				game_versions: versions.value.flatMap((v) => v.game_versions),
 				loaders: versions.value.flatMap((v) => v.loaders),
 			}
+			if (isCurseForge) {
+				return isCfVersionCompatible(version, profile)
+			}
 			return isVersionCompatible(version, project.value, profile)
-		}),
-)
+		})
+})
 
 const onInstall = ref(() => {})
 
@@ -95,7 +107,16 @@ defineExpose({
 
 async function install(instance) {
 	instance.installing = true
-	const version = findPreferredVersion(versions.value, project.value, instance)
+
+	// Check if this is a CurseForge project
+	const isCurseForge = project.value.source === 'curseforge'
+
+	let version
+	if (isCurseForge) {
+		version = findPreferredCfVersion(versions.value, instance)
+	} else {
+		version = findPreferredVersion(versions.value, project.value, instance)
+	}
 
 	if (!version) {
 		instance.installing = false
@@ -103,23 +124,42 @@ async function install(instance) {
 		return
 	}
 
-	await installMod(instance.path, version.id).catch(handleError)
-	await installVersionDependencies(instance, version).catch(handleError)
+	try {
+		if (isCurseForge) {
+			await installCfFile(
+				instance.path,
+				project.value.curseforge_id,
+				version.curseforge_file_id,
+			)
+			await installCfDependencies(
+				instance.path,
+				version,
+				instance,
+				async (projectId) => check_installed(instance.path, projectId),
+			)
+		} else {
+			await installMod(instance.path, version.id)
+			await installVersionDependencies(instance, version)
+		}
 
-	instance.installedMod = true
-	instance.installing = false
+		instance.installedMod = true
+		instance.installing = false
 
-	trackEvent('ProjectInstall', {
-		loader: instance.loader,
-		game_version: instance.game_version,
-		id: project.value.id,
-		version_id: version.id,
-		project_type: project.value.project_type,
-		title: project.value.title,
-		source: 'ProjectInstallModal',
-	})
+		trackEvent('ProjectInstall', {
+			loader: instance.loader,
+			game_version: instance.game_version,
+			id: project.value.id,
+			version_id: version.id,
+			project_type: project.value.project_type,
+			title: project.value.title,
+			source: isCurseForge ? 'CurseForge' : 'ProjectInstallModal',
+		})
 
-	onInstall.value(version.id)
+		onInstall.value(version.id)
+	} catch (err) {
+		instance.installing = false
+		handleError(err)
+	}
 }
 
 const toggleCreation = () => {
@@ -159,31 +199,50 @@ const reset_icon = () => {
 const createInstance = async () => {
 	creatingInstance.value = true
 
+	const selectedVersion = versions.value[0]
+	const versionLoader = selectedVersion.loaders?.[0] ?? 'vanilla'
 	const loader =
-		versions.value[0].loaders[0] !== 'forge' &&
-		versions.value[0].loaders[0] !== 'fabric' &&
-		versions.value[0].loaders[0] !== 'quilt'
+		versionLoader !== 'forge' &&
+		versionLoader !== 'fabric' &&
+		versionLoader !== 'quilt' &&
+		versionLoader !== 'neoforge'
 			? 'vanilla'
-			: versions.value[0].loaders[0]
+			: versionLoader
 
 	const id = await create(
 		name.value,
-		versions.value[0].game_versions[0],
+		selectedVersion.game_versions[0],
 		loader,
 		'latest',
 		icon.value,
 	).catch(handleError)
 
-	await installMod(id, versions.value[0].id).catch(handleError)
+	const isCurseforge = project.value.source === 'curseforge'
+
+	if (isCurseforge) {
+		await installCfFile(id, selectedVersion.curseforge_mod_id, selectedVersion.curseforge_file_id).catch(handleError)
+	} else {
+		await installMod(id, selectedVersion.id).catch(handleError)
+	}
 
 	await router.push(`/instance/${encodeURIComponent(id)}/`)
 
 	const instance = await get(id, true)
-	await installVersionDependencies(instance, versions.value[0]).catch(handleError)
+
+	if (isCurseforge) {
+		await installCfDependencies(
+			id,
+			selectedVersion,
+			{ loader: instance.loader, game_version: instance.game_version },
+			async (projectId) => await check_installed(id, projectId).catch(() => false),
+		).catch(handleError)
+	} else {
+		await installVersionDependencies(instance, selectedVersion).catch(handleError)
+	}
 
 	trackEvent('InstanceCreate', {
 		profile_name: name.value,
-		game_version: versions.value[0].game_versions[0],
+		game_version: selectedVersion.game_versions[0],
 		loader: loader,
 		loader_version: 'latest',
 		has_icon: !!icon.value,
@@ -192,15 +251,15 @@ const createInstance = async () => {
 
 	trackEvent('ProjectInstall', {
 		loader: loader,
-		game_version: versions.value[0].game_versions[0],
-		id: project.value,
-		version_id: versions.value[0].id,
+		game_version: selectedVersion.game_versions[0],
+		id: project.value.id,
+		version_id: selectedVersion.id,
 		project_type: project.value.project_type,
 		title: project.value.title,
 		source: 'ProjectInstallModal',
 	})
 
-	onInstall.value(versions.value[0].id)
+	onInstall.value(selectedVersion.id)
 
 	if (installModal.value) installModal.value.hide()
 	creatingInstance.value = false

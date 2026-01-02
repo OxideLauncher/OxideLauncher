@@ -2,7 +2,6 @@
 import { DownloadIcon, FlameColorIcon, HeartIcon, ModrinthColorIcon, TagIcon } from '@oxide/assets'
 import { Avatar, TagItem } from '@oxide/ui'
 import { formatCategory, formatNumber } from '@oxide/utils'
-import { openUrl } from '@tauri-apps/plugin-opener'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { computed } from 'vue'
@@ -57,29 +56,12 @@ const toTransparent = computed(() => {
 
 function handleCardClick() {
 	if (props.project.source === 'curseforge') {
-		const classSlug = getClassSlug(props.project.project_type)
-		openUrl(`https://www.curseforge.com/minecraft/${classSlug}/${props.project.slug}`)
+		const cfData = props.project.curseforge_data
+		if (cfData) {
+			router.push(`/cf-project/${cfData.id}`)
+		}
 	} else {
 		router.push(`/project/${props.project.slug}`)
-	}
-}
-
-function getClassSlug(projectType) {
-	switch (projectType) {
-		case 'mod':
-			return 'mc-mods'
-		case 'modpack':
-			return 'modpacks'
-		case 'resourcepack':
-			return 'texture-packs'
-		case 'shader':
-			return 'shaders'
-		case 'datapack':
-			return 'data-packs'
-		case 'plugin':
-			return 'bukkit-plugins'
-		default:
-			return 'mc-mods'
 	}
 }
 </script>
@@ -138,6 +120,7 @@ function getClassSlug(projectType) {
 					{{ formatNumber(project.downloads) }}
 				</div>
 				<div
+					v-if="project.source !== 'curseforge'"
 					class="flex items-center gap-1 pr-2 border-0 border-r-[1px] border-solid border-button-border"
 				>
 					<HeartIcon />
