@@ -1,23 +1,13 @@
 <template>
 	<div class="gallery">
-		<Card v-for="(image, index) in project.gallery" :key="image.url" class="gallery-item">
+		<Card v-for="(image, index) in mod.screenshots" :key="image.url" class="gallery-item">
 			<a @click="expandImage(image, index)">
-				<img :src="image.url" :alt="image.title" class="gallery-image" />
+				<img :src="image.thumbnailUrl || image.url" :alt="image.title" class="gallery-image" />
 			</a>
 			<div class="gallery-body">
 				<h3>{{ image.title }}</h3>
 				{{ image.description }}
 			</div>
-			<span v-if="image.created" class="gallery-time">
-				<CalendarIcon />
-				{{
-					new Date(image.created).toLocaleDateString('en-US', {
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric',
-					})
-				}}
-			</span>
 		</Card>
 	</div>
 	<div v-if="expandedGalleryItem" class="expanded-image-modal" @click="hideImage">
@@ -25,7 +15,7 @@
 			<img
 				class="image"
 				:class="{ 'zoomed-in': zoomedIn }"
-				:src="expandedGalleryItem.raw_url || expandedGalleryItem.url"
+				:src="expandedGalleryItem.url"
 				:alt="expandedGalleryItem.title || 'gallery-image'"
 				@click.stop="() => {}"
 			/>
@@ -47,7 +37,7 @@
 						<a
 							class="open btn icon-only"
 							target="_blank"
-							:href="expandedGalleryItem.raw_url || expandedGalleryItem.url"
+							:href="expandedGalleryItem.url"
 						>
 							<ExternalIcon aria-hidden="true" />
 						</a>
@@ -56,14 +46,14 @@
 							<ContractIcon v-else aria-hidden="true" />
 						</Button>
 						<Button
-							v-if="project.gallery.length > 1"
+							v-if="mod.screenshots.length > 1"
 							class="previous"
 							icon-only
 							@click="previousImage()"
 						>
 							<LeftArrowIcon aria-hidden="true" />
 						</Button>
-						<Button v-if="project.gallery.length > 1" class="next" icon-only @click="nextImage()">
+						<Button v-if="mod.screenshots.length > 1" class="next" icon-only @click="nextImage()">
 							<RightArrowIcon aria-hidden="true" />
 						</Button>
 					</div>
@@ -75,7 +65,6 @@
 
 <script setup>
 import {
-    CalendarIcon,
     ContractIcon,
     ExpandIcon,
     ExternalIcon,
@@ -90,7 +79,7 @@ import { hide_ads_window, show_ads_window } from '@/helpers/ads.js'
 import { trackEvent } from '@/helpers/analytics'
 
 const props = defineProps({
-	project: {
+	mod: {
 		type: Object,
 		default: () => ({}),
 	},
@@ -107,12 +96,12 @@ const hideImage = () => {
 
 const nextImage = () => {
 	expandedGalleryIndex.value++
-	if (expandedGalleryIndex.value >= props.project.gallery.length) {
+	if (expandedGalleryIndex.value >= props.mod.screenshots.length) {
 		expandedGalleryIndex.value = 0
 	}
-	expandedGalleryItem.value = props.project.gallery[expandedGalleryIndex.value]
+	expandedGalleryItem.value = props.mod.screenshots[expandedGalleryIndex.value]
 	trackEvent('CfGalleryImageNext', {
-		project_id: props.project.id,
+		project_id: props.mod.id,
 		url: expandedGalleryItem.value.url,
 	})
 }
@@ -120,11 +109,11 @@ const nextImage = () => {
 const previousImage = () => {
 	expandedGalleryIndex.value--
 	if (expandedGalleryIndex.value < 0) {
-		expandedGalleryIndex.value = props.project.gallery.length - 1
+		expandedGalleryIndex.value = props.mod.screenshots.length - 1
 	}
-	expandedGalleryItem.value = props.project.gallery[expandedGalleryIndex.value]
+	expandedGalleryItem.value = props.mod.screenshots[expandedGalleryIndex.value]
 	trackEvent('CfGalleryImagePrevious', {
-		project_id: props.project.id,
+		project_id: props.mod.id,
 		url: expandedGalleryItem.value.url,
 	})
 }
@@ -136,7 +125,7 @@ const expandImage = (item, index) => {
 	zoomedIn.value = false
 
 	trackEvent('CfGalleryImageExpand', {
-		project_id: props.project.id,
+		project_id: props.mod.id,
 		url: item.url,
 	})
 }

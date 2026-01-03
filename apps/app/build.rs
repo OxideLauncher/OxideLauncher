@@ -58,8 +58,20 @@ fn main() {
                         "curseforge_get_featured_mods",
                         "curseforge_match_fingerprints",
                         "curseforge_get_mod_description",
+                        "curseforge_get_file_changelog",
                         "curseforge_get_game_versions",
                         "curseforge_get_game_version_types",
+                        "curseforge_get_file_download_url",
+                        "curseforge_install_file",
+                        // Cached versions
+                        "curseforge_get_mod_cached",
+                        "curseforge_get_mods_cached",
+                        "curseforge_get_file_cached",
+                        "curseforge_get_files_cached",
+                        "curseforge_get_fingerprint_cached",
+                        "curseforge_get_fingerprints_cached",
+                        "curseforge_get_categories_cached",
+                        "curseforge_search_cached",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,

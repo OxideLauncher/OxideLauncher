@@ -2,7 +2,7 @@
 	<div class="flex flex-col gap-3">
 		<h2 class="text-lg m-0">{{ formatMessage(messages.title) }}</h2>
 		<div class="flex flex-col gap-3 font-semibold [&>div]:flex [&>div]:gap-2 [&>div]:items-center">
-			<div>
+			<div v-if="project.license">
 				<BookTextIcon aria-hidden="true" />
 				<div>
 					Licensed
@@ -82,9 +82,9 @@ const props = defineProps<{
 		approved: string
 		queued: string
 		status: string
-		license: {
+		license?: {
 			id: string
-			url: string
+			url?: string
 		}
 	}
 	linkTarget: string
@@ -105,6 +105,7 @@ const updatedDate = computed(() =>
 )
 
 const licenseIdDisplay = computed(() => {
+	if (!props.project.license) return ''
 	const id = props.project.license.id
 
 	if (id === 'LicenseRef-All-Rights-Reserved') {

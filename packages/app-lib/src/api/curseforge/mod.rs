@@ -125,6 +125,7 @@ async fn fetch_curseforge<T: DeserializeOwned>(
     let bytes =
         fetch_curseforge_bytes(method, &url, body, fetch_semaphore, pool)
             .await?;
+
     let value = serde_json::from_slice(&bytes)?;
     Ok(value)
 }
@@ -404,6 +405,21 @@ pub async fn get_mod_description(
     Ok(response.data)
 }
 
+/// Get file changelog (HTML body)
+#[tracing::instrument(skip(fetch_semaphore, pool))]
+pub async fn get_file_changelog(
+    mod_id: i32,
+    file_id: i32,
+    fetch_semaphore: &FetchSemaphore,
+    pool: &SqlitePool,
+) -> crate::Result<String> {
+    let endpoint = format!("mods/{}/files/{}/changelog", mod_id, file_id);
+    let response: ApiResponse<String> =
+        fetch_curseforge(Method::GET, &endpoint, None, fetch_semaphore, pool)
+            .await?;
+    Ok(response.data)
+}
+
 // ====== High-level API functions using global state ======
 // These wrappers use State::get() to provide the semaphore and pool
 
@@ -516,6 +532,13 @@ pub async fn get_description(mod_id: i32) -> crate::Result<String> {
     get_mod_description(mod_id, &state.api_semaphore, &state.pool).await
 }
 
+/// Get file changelog (using global state)
+#[tracing::instrument]
+pub async fn get_changelog(mod_id: i32, file_id: i32) -> crate::Result<String> {
+    let state = State::get().await?;
+    get_file_changelog(mod_id, file_id, &state.api_semaphore, &state.pool).await
+}
+
 /// Get Minecraft game versions from CurseForge (using global state)
 #[tracing::instrument]
 pub async fn get_mc_versions() -> crate::Result<Vec<GameVersionsByType>> {
@@ -539,6 +562,224 @@ pub async fn get_download_url(
     let state = State::get().await?;
     get_file_download_url(mod_id, file_id, &state.api_semaphore, &state.pool)
         .await
+}
+
+// ====== Cached API functions ======
+// These functions use the SQLite cache to avoid unnecessary API calls
+
+use crate::state::{
+    CacheBehaviour, CachedEntry, CfCachedCategory, CfCachedFile,
+    CfCachedFingerprint, CfCachedProject, CfSearchResults,
+};
+
+/// Get a single mod by ID with caching support
+#[tracing::instrument]
+pub async fn get_mod_cached(
+    mod_id: i32,
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Option<CfCachedProject>> {
+    let state = State::get().await?;
+    CachedEntry::get_cf_project(
+        &mod_id.to_string(),
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Get multiple mods by ID with caching support
+#[tracing::instrument]
+pub async fn get_mods_cached(
+    mod_ids: &[i32],
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Vec<CfCachedProject>> {
+    if mod_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let state = State::get().await?;
+    let ids: Vec<String> = mod_ids.iter().map(|id| id.to_string()).collect();
+    let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+    CachedEntry::get_cf_project_many(
+        &id_refs,
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Get a single file by ID with caching support
+#[tracing::instrument]
+pub async fn get_file_cached(
+    file_id: i32,
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Option<CfCachedFile>> {
+    let state = State::get().await?;
+    CachedEntry::get_cf_file(
+        &file_id.to_string(),
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Get multiple files by ID with caching support
+#[tracing::instrument]
+pub async fn get_files_cached(
+    file_ids: &[i32],
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Vec<CfCachedFile>> {
+    if file_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let state = State::get().await?;
+    let ids: Vec<String> = file_ids.iter().map(|id| id.to_string()).collect();
+    let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+    CachedEntry::get_cf_file_many(
+        &id_refs,
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Get fingerprint matches with caching support
+#[tracing::instrument]
+pub async fn get_fingerprint_cached(
+    fingerprint: i64,
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Option<CfCachedFingerprint>> {
+    let state = State::get().await?;
+    CachedEntry::get_cf_fingerprint(
+        &fingerprint.to_string(),
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Get multiple fingerprint matches with caching support
+#[tracing::instrument]
+pub async fn get_fingerprints_cached(
+    fingerprints: &[i64],
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Vec<CfCachedFingerprint>> {
+    if fingerprints.is_empty() {
+        return Ok(Vec::new());
+    }
+    let state = State::get().await?;
+    let ids: Vec<String> =
+        fingerprints.iter().map(|fp| fp.to_string()).collect();
+    let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+    CachedEntry::get_cf_fingerprint_many(
+        &id_refs,
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Get CurseForge categories with caching support
+#[tracing::instrument]
+pub async fn get_categories_cached(
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<Option<Vec<CfCachedCategory>>> {
+    let state = State::get().await?;
+    CachedEntry::get_cf_categories(
+        cache_behaviour,
+        &state.pool,
+        &state.api_semaphore,
+    )
+    .await
+}
+
+/// Search for mods and cache the results
+/// The search query is used as the cache key
+#[tracing::instrument(skip(fetch_semaphore, pool))]
+pub async fn search_mods_cached(
+    params: ModSearchParams,
+    cache_behaviour: Option<CacheBehaviour>,
+    fetch_semaphore: &crate::util::fetch::FetchSemaphore,
+    pool: &SqlitePool,
+) -> crate::Result<CfSearchResults> {
+    use crate::state::CacheValue;
+
+    let query_key = params.to_query_string();
+    let cache_behaviour = cache_behaviour.unwrap_or_default();
+
+    // Try to get from cache first
+    if cache_behaviour != CacheBehaviour::Bypass
+        && let Some(cached) = CachedEntry::get_cf_search_results(
+            &query_key,
+            Some(cache_behaviour),
+            pool,
+            fetch_semaphore,
+        )
+        .await?
+    {
+        return Ok(cached);
+    }
+
+    // Fetch from API
+    let response = search_mods(params, fetch_semaphore, pool).await?;
+
+    // Convert to cached format
+    let cached_results: Vec<CfCachedProject> = response
+        .data
+        .iter()
+        .map(CfCachedProject::from_cf_mod)
+        .collect();
+
+    let result = CfSearchResults {
+        query: query_key,
+        results: cached_results,
+        total_count: response.pagination.total_count,
+        index: response.pagination.index,
+        page_size: response.pagination.page_size,
+    };
+
+    // Store in cache
+    CachedEntry::upsert_many(
+        &[CacheValue::CfSearchResults(result.clone()).get_entry()],
+        pool,
+    )
+    .await?;
+
+    // Also cache individual projects
+    let project_entries: Vec<_> = response
+        .data
+        .iter()
+        .map(|m| {
+            CacheValue::CfProject(CfCachedProject::from_cf_mod(m)).get_entry()
+        })
+        .collect();
+
+    if !project_entries.is_empty() {
+        CachedEntry::upsert_many(&project_entries, pool).await?;
+    }
+
+    Ok(result)
+}
+
+/// Search for mods with caching (using global state)
+#[tracing::instrument]
+pub async fn search_cached(
+    params: &ModSearchParams,
+    cache_behaviour: Option<CacheBehaviour>,
+) -> crate::Result<CfSearchResults> {
+    let state = State::get().await?;
+    search_mods_cached(
+        params.clone(),
+        cache_behaviour,
+        &state.api_semaphore,
+        &state.pool,
+    )
+    .await
 }
 
 #[cfg(test)]

@@ -24,11 +24,13 @@ pub mod data {
         PaginatedResponse as CurseForgePaginatedResponse,
     };
     pub use crate::state::{
-        CacheBehaviour, CacheValueType, ContentProvider, Credentials,
-        Dependency, DirectoryInfo, Hooks, JavaVersion, LinkedData,
-        MemorySettings, ModLoader, ModrinthCredentials, Organization,
-        ProcessMetadata, ProfileFile, Project, ProjectType, SearchResult,
-        SearchResults, Settings, TeamMember, Theme, User, Version, WindowSize,
+        CacheBehaviour, CacheValueType, CfCachedAuthor, CfCachedCategory,
+        CfCachedDependency, CfCachedFile, CfCachedFingerprint, CfCachedProject,
+        CfSearchResults, ContentProvider, Credentials, Dependency,
+        DirectoryInfo, Hooks, JavaVersion, LinkedData, MemorySettings,
+        ModLoader, ModrinthCredentials, Organization, ProcessMetadata,
+        ProfileFile, Project, ProjectType, SearchResult, SearchResults,
+        Settings, TeamMember, Theme, User, Version, WindowSize,
     };
 }
 

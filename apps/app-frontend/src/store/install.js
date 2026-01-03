@@ -3,14 +3,18 @@ import { defineStore } from 'pinia'
 
 import { trackEvent } from '@/helpers/analytics.js'
 import { get_project, get_version_many } from '@/helpers/cache.js'
+import {
+    normalizeCfFilesForModal,
+    normalizeCfModForModal,
+} from '@/helpers/curseforge.ts'
 import { create_profile_and_install as packInstall } from '@/helpers/pack.js'
 import {
-	add_project_from_version,
-	check_installed,
-	get,
-	get_projects,
-	list,
-	remove_project,
+    add_project_from_version,
+    check_installed,
+    get,
+    get_projects,
+    list,
+    remove_project,
 } from '@/helpers/profile.js'
 
 export const useInstall = defineStore('installStore', {
@@ -32,11 +36,32 @@ export const useInstall = defineStore('installStore', {
 		showIncompatibilityWarningModal(instance, project, versions, selected, onInstall) {
 			this.incompatibilityWarningModal.show(instance, project, versions, selected, onInstall)
 		},
+		// CurseForge-specific method: normalizes native CurseForge data
+		showCfIncompatibilityWarningModal(instance, mod, files, selectedFile, onInstall) {
+			const normalizedProject = normalizeCfModForModal(mod)
+			const normalizedVersions = normalizeCfFilesForModal(files)
+			const normalizedSelected = normalizedVersions.find(
+				(v) => v.curseforge_file_id === selectedFile.id,
+			)
+			this.incompatibilityWarningModal.show(
+				instance,
+				normalizedProject,
+				normalizedVersions,
+				normalizedSelected,
+				onInstall,
+			)
+		},
 		setModInstallModal(ref) {
 			this.modInstallModal = ref
 		},
 		showModInstallModal(project, versions, onInstall) {
 			this.modInstallModal.show(project, versions, onInstall)
+		},
+		// CurseForge-specific method: normalizes native CurseForge data
+		showCfModInstallModal(mod, files, onInstall) {
+			const normalizedProject = normalizeCfModForModal(mod)
+			const normalizedVersions = normalizeCfFilesForModal(files)
+			this.modInstallModal.show(normalizedProject, normalizedVersions, onInstall)
 		},
 	},
 })

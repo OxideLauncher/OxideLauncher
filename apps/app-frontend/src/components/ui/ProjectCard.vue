@@ -59,6 +59,10 @@ function handleCardClick() {
 		const cfData = props.project.curseforge_data
 		if (cfData) {
 			router.push(`/cf-project/${cfData.id}`)
+		} else {
+			// Handle cached result - extract ID from normalized ID (cf-XXXXX)
+			const cfId = props.project.id.replace('cf-', '')
+			router.push(`/cf-project/${cfId}`)
 		}
 	} else {
 		router.push(`/project/${props.project.slug}`)
@@ -71,24 +75,41 @@ function handleCardClick() {
 		class="card-shadow bg-bg-raised rounded-xl overflow-clip cursor-pointer hover:brightness-90 transition-all"
 		@click="handleCardClick"
 	>
-		<div
-			class="w-full aspect-[2/1] bg-cover bg-center bg-no-repeat"
-			:style="{
-				'background-color': project.featured_gallery ?? project.gallery[0] ? null : toColor,
-				'background-image': `url(${
-					project.featured_gallery ??
-					project.gallery[0] ??
-					'https://launcher-files.modrinth.com/assets/maze-bg.png'
-				})`,
-			}"
-		>
+		<div class="gallery-container w-full aspect-[2/1] relative overflow-hidden">
+			<template v-if="project.featured_gallery || project.gallery[0]">
+				<div
+					class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+					:style="{
+						'background-image': `url(${project.featured_gallery ?? project.gallery[0]})`,
+					}"
+				></div>
+			</template>
+			<template v-else>
+				<div class="absolute inset-0" :style="{ 'background-color': toColor }"></div>
+				<div
+					v-if="project.icon_url"
+					class="absolute inset-0 flex items-center justify-center"
+				>
+					<img
+						:src="project.icon_url"
+						alt=""
+						class="w-full h-full object-cover blur-2xl scale-150 opacity-60"
+					/>
+				</div>
+				<div class="absolute inset-0" :style="{ background: toTransparent }"></div>
+				<div class="absolute inset-0 flex items-center justify-center p-4">
+					<span
+						class="text-lg font-bold text-white text-center drop-shadow-lg line-clamp-2"
+						style="text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5)"
+					>
+						{{ project.title }}
+					</span>
+				</div>
+			</template>
 			<div
-				class="badges-wrapper"
+				class="badges-wrapper relative h-full"
 				:class="{
 					'no-image': !project.featured_gallery && !project.gallery[0],
-				}"
-				:style="{
-					background: !project.featured_gallery && !project.gallery[0] ? toTransparent : null,
 				}"
 			></div>
 		</div>

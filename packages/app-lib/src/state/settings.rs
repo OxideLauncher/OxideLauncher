@@ -6,7 +6,9 @@ use std::collections::HashMap;
 
 // Types
 /// Content provider for browsing mods/modpacks
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum ContentProvider {
     #[default]

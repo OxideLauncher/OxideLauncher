@@ -330,7 +330,10 @@ pub struct CurseForgeFile {
     pub hashes: Vec<FileHash>,
     pub file_date: DateTime<Utc>,
     pub file_length: i64,
+    #[serde(default)]
     pub download_count: i64,
+    #[serde(default)]
+    pub file_size_on_disk: Option<i64>,
     #[serde(default)]
     pub file_fingerprint: Option<i64>,
     pub download_url: Option<String>,

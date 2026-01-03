@@ -9,12 +9,17 @@ import RowDisplay from '@/components/RowDisplay.vue'
 import ProviderToggle from '@/components/ui/ProviderToggle.vue'
 import RecentWorldsList from '@/components/ui/world/RecentWorldsList.vue'
 import {
-    normalizeCurseForgeResult,
-    type NormalizedSearchResult,
+    normalizeCachedCurseForgeResult,
     useContentProvider,
+    type NormalizedSearchResult,
 } from '@/composables/useContentProvider'
 import { get_search_results } from '@/helpers/cache.js'
-import { type CurseForgeMod, get_featured_mods } from '@/helpers/curseforge'
+import {
+    ClassId,
+    get_categories_cached as cfGetCategoriesCached,
+    search_cached,
+    type CfCachedCategory,
+} from '@/helpers/curseforge'
 import { profile_listener } from '@/helpers/events'
 import { list } from '@/helpers/profile.js'
 import type { GameInstance } from '@/helpers/types'
@@ -118,37 +123,50 @@ async function fetchFeaturedMods() {
 
 async function fetchCurseForgeFeatured() {
 	try {
-		const response = await get_featured_mods(null, [])
+		// Fetch categories for lookup
+		const cfCategories = await cfGetCategoriesCached()
+		const cfCategoryMap = new Map<number, CfCachedCategory>()
+		if (cfCategories) {
+			for (const cat of cfCategories) {
+				cfCategoryMap.set(cat.id, cat)
+			}
+		}
 
-		// CurseForge featured returns mods by default (classId 6)
-		// Filter popular mods into modpacks and regular mods based on classId
-		const modpacks = response.popular.filter((mod: CurseForgeMod) => mod.classId === 4471)
-		const mods = response.popular.filter(
-			(mod: CurseForgeMod) => mod.classId === 6 || !mod.classId,
-		)
-
-		// If no modpacks in popular, try featured
-		let finalModpacks =
-			modpacks.length > 0
-				? modpacks.slice(0, 10)
-				: response.featured.filter((mod: CurseForgeMod) => mod.classId === 4471).slice(0, 10)
-
-		// If still no modpacks, fetch popular modpacks via search API
-		if (finalModpacks.length === 0) {
-			const { search_mods, ClassId } = await import('@/helpers/curseforge')
-			const modpackSearch = await search_mods({
+		// Use cached search for both modpacks and mods (sorted by popularity)
+		const [modpacksResult, modsResult] = await Promise.all([
+			search_cached({
 				class_id: ClassId.Modpacks,
 				sort_field: 'Popularity',
 				sort_order: 'desc',
 				page_size: 10,
-			})
-			finalModpacks = modpackSearch.data
+			}),
+			search_cached({
+				class_id: ClassId.Mods,
+				sort_field: 'Popularity',
+				sort_order: 'desc',
+				page_size: 10,
+			}),
+		])
+
+		// Normalize results and resolve category slugs
+		const resolveCfCategories = (result: NormalizedSearchResult) => {
+			if (result.cf_category_ids && result.cf_category_ids.length > 0) {
+				const resolvedCategories = result.cf_category_ids
+					.map((id) => cfCategoryMap.get(id))
+					.filter((cat): cat is CfCachedCategory => cat != null)
+					.map((cat) => cat.slug)
+				result.categories = resolvedCategories
+				result.display_categories = resolvedCategories
+			}
+			return result
 		}
 
-		const finalMods = mods.length > 0 ? mods.slice(0, 10) : response.featured.slice(0, 10)
-
-		featuredModpacks.value = finalModpacks.map(normalizeCurseForgeResult)
-		featuredMods.value = finalMods.map(normalizeCurseForgeResult)
+		featuredModpacks.value = modpacksResult.results
+			.map(normalizeCachedCurseForgeResult)
+			.map(resolveCfCategories)
+		featuredMods.value = modsResult.results
+			.map(normalizeCachedCurseForgeResult)
+			.map(resolveCfCategories)
 	} catch (error) {
 		handleError(error)
 		featuredModpacks.value = []

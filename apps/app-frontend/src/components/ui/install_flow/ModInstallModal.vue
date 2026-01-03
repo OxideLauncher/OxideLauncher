@@ -131,12 +131,16 @@ async function install(instance) {
 				project.value.curseforge_id,
 				version.curseforge_file_id,
 			)
-			await installCfDependencies(
-				instance.path,
-				version,
-				instance,
-				async (projectId) => check_installed(instance.path, projectId),
-			)
+			// Use the original file reference for dependency installation
+			const originalFile = version._file
+			if (originalFile) {
+				await installCfDependencies(
+					instance.path,
+					originalFile,
+					instance,
+					async (projectId) => check_installed(instance.path, `cf-${projectId}`),
+				)
+			}
 		} else {
 			await installMod(instance.path, version.id)
 			await installVersionDependencies(instance, version)
@@ -230,12 +234,16 @@ const createInstance = async () => {
 	const instance = await get(id, true)
 
 	if (isCurseforge) {
-		await installCfDependencies(
-			id,
-			selectedVersion,
-			{ loader: instance.loader, game_version: instance.game_version },
-			async (projectId) => await check_installed(id, projectId).catch(() => false),
-		).catch(handleError)
+		// Use the original file reference for dependency installation
+		const originalFile = selectedVersion._file
+		if (originalFile) {
+			await installCfDependencies(
+				id,
+				originalFile,
+				{ loader: instance.loader, game_version: instance.game_version },
+				async (projectId) => await check_installed(id, `cf-${projectId}`).catch(() => false),
+			).catch(handleError)
+		}
 	} else {
 		await installVersionDependencies(instance, selectedVersion).catch(handleError)
 	}

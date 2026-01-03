@@ -34,6 +34,13 @@ pub enum CacheValueType {
     FileHash,
     FileUpdate,
     SearchResults,
+    // CurseForge cache types
+    CfProject,
+    CfFile,
+    CfAuthor,
+    CfSearchResults,
+    CfFingerprint,
+    CfCategories,
 }
 
 impl CacheValueType {
@@ -55,6 +62,13 @@ impl CacheValueType {
             CacheValueType::FileHash => "file_hash",
             CacheValueType::FileUpdate => "file_update",
             CacheValueType::SearchResults => "search_results",
+            // CurseForge types
+            CacheValueType::CfProject => "cf_project",
+            CacheValueType::CfFile => "cf_file",
+            CacheValueType::CfAuthor => "cf_author",
+            CacheValueType::CfSearchResults => "cf_search_results",
+            CacheValueType::CfFingerprint => "cf_fingerprint",
+            CacheValueType::CfCategories => "cf_categories",
         }
     }
 
@@ -76,6 +90,13 @@ impl CacheValueType {
             "file_hash" => CacheValueType::FileHash,
             "file_update" => CacheValueType::FileUpdate,
             "search_results" => CacheValueType::SearchResults,
+            // CurseForge types
+            "cf_project" => CacheValueType::CfProject,
+            "cf_file" => CacheValueType::CfFile,
+            "cf_author" => CacheValueType::CfAuthor,
+            "cf_search_results" => CacheValueType::CfSearchResults,
+            "cf_fingerprint" => CacheValueType::CfFingerprint,
+            "cf_categories" => CacheValueType::CfCategories,
             _ => CacheValueType::Project,
         }
     }
@@ -85,6 +106,7 @@ impl CacheValueType {
         match self {
             CacheValueType::File => 30 * 24 * 60 * 60, // 30 days
             CacheValueType::FileHash => 30 * 24 * 60 * 60, // 30 days
+            CacheValueType::CfFingerprint => 30 * 24 * 60 * 60, // 30 days
             _ => 30 * 60,                              // 30 minutes
         }
     }
@@ -118,7 +140,14 @@ impl CacheValueType {
             | CacheValueType::File
             | CacheValueType::LoaderManifest
             | CacheValueType::FileUpdate
-            | CacheValueType::SearchResults => None,
+            | CacheValueType::SearchResults
+            // CurseForge types - no aliases
+            | CacheValueType::CfProject
+            | CacheValueType::CfFile
+            | CacheValueType::CfAuthor
+            | CacheValueType::CfSearchResults
+            | CacheValueType::CfFingerprint
+            | CacheValueType::CfCategories => None,
         }
     }
 }
@@ -151,6 +180,14 @@ pub enum CacheValue {
     FileHash(CachedFileHash),
     FileUpdate(CachedFileUpdate),
     SearchResults(SearchResults),
+
+    // CurseForge cache types
+    CfProject(CfCachedProject),
+    CfFile(CfCachedFile),
+    CfAuthor(CfCachedAuthor),
+    CfSearchResults(CfSearchResults),
+    CfFingerprint(CfCachedFingerprint),
+    CfCategories(Vec<CfCachedCategory>),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -219,6 +256,180 @@ pub struct CachedFile {
     pub hash: String,
     pub project_id: String,
     pub version_id: String,
+}
+
+// ======== CurseForge Cached Types ========
+
+/// Cached CurseForge project/mod data
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfCachedProject {
+    pub id: i32,
+    pub name: String,
+    pub slug: String,
+    pub summary: String,
+    pub download_count: i64,
+    pub is_featured: bool,
+    pub class_id: Option<i32>,
+    pub authors: Vec<CfCachedAuthor>,
+    pub logo_url: Option<String>,
+    pub logo_thumbnail_url: Option<String>,
+    #[serde(default)]
+    pub featured_image_url: Option<String>,
+    pub main_file_id: i32,
+    pub date_created: DateTime<Utc>,
+    pub date_modified: DateTime<Utc>,
+    pub date_released: DateTime<Utc>,
+    pub allow_mod_distribution: Option<bool>,
+    pub is_available: bool,
+    pub thumbs_up_count: i32,
+    pub rating: Option<f64>,
+    // Links
+    pub website_url: Option<String>,
+    pub wiki_url: Option<String>,
+    pub issues_url: Option<String>,
+    pub source_url: Option<String>,
+    // Categories
+    pub categories: Vec<i32>,
+    pub primary_category_id: i32,
+}
+
+/// Cached CurseForge file/version data
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfCachedFile {
+    pub id: i32,
+    pub mod_id: i32,
+    pub display_name: String,
+    pub file_name: String,
+    pub release_type: i32,
+    pub file_status: i32,
+    pub file_date: DateTime<Utc>,
+    pub file_length: i64,
+    pub download_count: i64,
+    pub download_url: Option<String>,
+    pub game_versions: Vec<String>,
+    pub dependencies: Vec<CfCachedDependency>,
+    pub is_available: bool,
+    // Hashes
+    pub sha1_hash: Option<String>,
+    pub fingerprint: Option<i64>,
+}
+
+/// Cached CurseForge file dependency
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfCachedDependency {
+    pub mod_id: i32,
+    pub relation_type: i32,
+}
+
+/// Cached CurseForge author data
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfCachedAuthor {
+    pub id: i32,
+    pub name: String,
+    pub url: String,
+}
+
+/// Cached CurseForge search results
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfSearchResults {
+    pub query: String,
+    pub results: Vec<CfCachedProject>,
+    pub total_count: u32,
+    pub index: u32,
+    pub page_size: u32,
+}
+
+/// Cached CurseForge fingerprint match
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfCachedFingerprint {
+    pub fingerprint: i64,
+    pub mod_id: i32,
+    pub file_id: i32,
+}
+
+/// Cached CurseForge category
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CfCachedCategory {
+    pub id: i32,
+    pub name: String,
+    pub slug: String,
+    pub icon_url: String,
+    pub class_id: Option<i32>,
+    pub parent_category_id: Option<i32>,
+}
+
+impl CfCachedProject {
+    /// Convert from CurseForge API mod type to cached version
+    pub fn from_cf_mod(m: &crate::api::curseforge::CurseForgeMod) -> Self {
+        Self {
+            id: m.id,
+            name: m.name.clone(),
+            slug: m.slug.clone(),
+            summary: m.summary.clone(),
+            download_count: m.download_count,
+            is_featured: m.is_featured,
+            class_id: m.class_id,
+            authors: m
+                .authors
+                .iter()
+                .map(|a| CfCachedAuthor {
+                    id: a.id,
+                    name: a.name.clone(),
+                    url: a.url.clone(),
+                })
+                .collect(),
+            logo_url: m.logo.as_ref().map(|l| l.url.clone()),
+            logo_thumbnail_url: m
+                .logo
+                .as_ref()
+                .map(|l| l.thumbnail_url.clone()),
+            featured_image_url: m.screenshots.first().map(|s| s.url.clone()),
+            main_file_id: m.main_file_id,
+            date_created: m.date_created,
+            date_modified: m.date_modified,
+            date_released: m.date_released,
+            allow_mod_distribution: m.allow_mod_distribution,
+            is_available: m.is_available,
+            thumbs_up_count: m.thumbs_up_count,
+            rating: m.rating,
+            website_url: m.links.website_url.clone(),
+            wiki_url: m.links.wiki_url.clone(),
+            issues_url: m.links.issues_url.clone(),
+            source_url: m.links.source_url.clone(),
+            categories: m.categories.iter().map(|c| c.id).collect(),
+            primary_category_id: m.primary_category_id,
+        }
+    }
+}
+
+impl CfCachedFile {
+    /// Convert from CurseForge API file type to cached version
+    pub fn from_cf_file(f: &crate::api::curseforge::CurseForgeFile) -> Self {
+        Self {
+            id: f.id,
+            mod_id: f.mod_id,
+            display_name: f.display_name.clone(),
+            file_name: f.file_name.clone(),
+            release_type: f.release_type,
+            file_status: f.file_status,
+            file_date: f.file_date,
+            file_length: f.file_length,
+            download_count: f.download_count,
+            download_url: f.download_url.clone(),
+            game_versions: f.game_versions.clone(),
+            dependencies: f
+                .dependencies
+                .iter()
+                .map(|d| CfCachedDependency {
+                    mod_id: d.mod_id,
+                    relation_type: d.relation_type,
+                })
+                .collect(),
+            is_available: f.is_available,
+            sha1_hash: f.get_sha1().map(|s| s.to_string()),
+            fingerprint: f.file_fingerprint,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -456,6 +667,13 @@ impl CacheValue {
             CacheValue::FileHash(_) => CacheValueType::FileHash,
             CacheValue::FileUpdate(_) => CacheValueType::FileUpdate,
             CacheValue::SearchResults(_) => CacheValueType::SearchResults,
+            // CurseForge types
+            CacheValue::CfProject(_) => CacheValueType::CfProject,
+            CacheValue::CfFile(_) => CacheValueType::CfFile,
+            CacheValue::CfAuthor(_) => CacheValueType::CfAuthor,
+            CacheValue::CfSearchResults(_) => CacheValueType::CfSearchResults,
+            CacheValue::CfFingerprint(_) => CacheValueType::CfFingerprint,
+            CacheValue::CfCategories(_) => CacheValueType::CfCategories,
         }
     }
 
@@ -496,6 +714,13 @@ impl CacheValue {
                 )
             }
             CacheValue::SearchResults(search) => search.search.clone(),
+            // CurseForge keys use i32 IDs converted to strings
+            CacheValue::CfProject(project) => project.id.to_string(),
+            CacheValue::CfFile(file) => file.id.to_string(),
+            CacheValue::CfAuthor(author) => author.id.to_string(),
+            CacheValue::CfSearchResults(search) => search.query.clone(),
+            CacheValue::CfFingerprint(fp) => fp.fingerprint.to_string(),
+            CacheValue::CfCategories(_) => DEFAULT_ID.to_string(),
         }
     }
 
@@ -520,7 +745,15 @@ impl CacheValue {
             | CacheValue::File { .. }
             | CacheValue::LoaderManifest { .. }
             | CacheValue::FileUpdate(_)
-            | CacheValue::SearchResults(_) => None,
+            | CacheValue::SearchResults(_)
+            // CurseForge types have slug alias only for projects
+            | CacheValue::CfFile(_)
+            | CacheValue::CfAuthor(_)
+            | CacheValue::CfSearchResults(_)
+            | CacheValue::CfFingerprint(_)
+            | CacheValue::CfCategories(_) => None,
+
+            CacheValue::CfProject(project) => Some(project.slug.clone()),
         }
     }
 }
@@ -628,7 +861,13 @@ impl_cache_methods!(
     (LoaderManifest, CachedLoaderManifest),
     (FileHash, CachedFileHash),
     (FileUpdate, CachedFileUpdate),
-    (SearchResults, SearchResults)
+    (SearchResults, SearchResults),
+    // CurseForge types
+    (CfProject, CfCachedProject),
+    (CfFile, CfCachedFile),
+    (CfAuthor, CfCachedAuthor),
+    (CfSearchResults, CfSearchResults),
+    (CfFingerprint, CfCachedFingerprint)
 );
 
 impl_cache_method_singular!(
@@ -637,7 +876,9 @@ impl_cache_method_singular!(
     (ReportTypes, Vec<String>),
     (Loaders, Vec<Loader>),
     (GameVersions, Vec<GameVersion>),
-    (DonationPlatforms, Vec<DonationPlatform>)
+    (DonationPlatforms, Vec<DonationPlatform>),
+    // CurseForge singleton
+    (CfCategories, Vec<CfCachedCategory>)
 );
 
 impl CachedEntry {
@@ -1408,6 +1649,207 @@ impl CachedEntry {
                     )
                 })
                 .collect()
+            }
+
+            // CurseForge cache types
+            CacheValueType::CfProject => {
+                use crate::api::curseforge;
+
+                let ids: Vec<i32> = keys
+                    .iter()
+                    .filter_map(|k| k.to_string().parse().ok())
+                    .collect();
+
+                if ids.is_empty() {
+                    return Ok(vec![]);
+                }
+
+                let mods =
+                    curseforge::get_mods(ids.clone(), fetch_semaphore, pool)
+                        .await?;
+
+                let mut values = vec![];
+                let fetched_ids: std::collections::HashSet<i32> =
+                    mods.iter().map(|m| m.id).collect();
+
+                for m in mods {
+                    let cached = CfCachedProject::from_cf_mod(&m);
+                    for author in &m.authors {
+                        values.push((
+                            CacheValue::CfAuthor(CfCachedAuthor {
+                                id: author.id,
+                                name: author.name.clone(),
+                                url: author.url.clone(),
+                            })
+                            .get_entry(),
+                            false,
+                        ));
+                    }
+                    values.push((
+                        CacheValue::CfProject(cached).get_entry(),
+                        true,
+                    ));
+                }
+
+                for key in keys {
+                    if let Ok(id) = key.to_string().parse::<i32>()
+                        && !fetched_ids.contains(&id)
+                    {
+                        values.push((
+                            CacheValueType::CfProject
+                                .get_empty_entry(id.to_string()),
+                            true,
+                        ));
+                    }
+                }
+
+                values
+            }
+
+            CacheValueType::CfFile => {
+                use crate::api::curseforge;
+
+                let ids: Vec<i32> = keys
+                    .iter()
+                    .filter_map(|k| k.to_string().parse().ok())
+                    .collect();
+
+                if ids.is_empty() {
+                    return Ok(vec![]);
+                }
+
+                let files =
+                    curseforge::get_files(ids.clone(), fetch_semaphore, pool)
+                        .await?;
+
+                let mut values = vec![];
+                let fetched_ids: std::collections::HashSet<i32> =
+                    files.iter().map(|f| f.id).collect();
+
+                for f in files {
+                    let cached = CfCachedFile::from_cf_file(&f);
+                    values.push((CacheValue::CfFile(cached).get_entry(), true));
+                }
+
+                for key in keys {
+                    if let Ok(id) = key.to_string().parse::<i32>()
+                        && !fetched_ids.contains(&id)
+                    {
+                        values.push((
+                            CacheValueType::CfFile
+                                .get_empty_entry(id.to_string()),
+                            true,
+                        ));
+                    }
+                }
+
+                values
+            }
+
+            CacheValueType::CfAuthor => {
+                // Authors are fetched as part of projects, so we just return empty entries
+                // for any requested author IDs that aren't already cached
+                keys.iter()
+                    .map(|k| {
+                        (
+                            CacheValueType::CfAuthor
+                                .get_empty_entry(k.to_string()),
+                            true,
+                        )
+                    })
+                    .collect()
+            }
+
+            CacheValueType::CfSearchResults => {
+                // Search results are handled specially via direct API calls
+                // The query string is the key
+                keys.iter()
+                    .map(|k| {
+                        (
+                            CacheValueType::CfSearchResults
+                                .get_empty_entry(k.to_string()),
+                            true,
+                        )
+                    })
+                    .collect()
+            }
+
+            CacheValueType::CfFingerprint => {
+                use crate::api::curseforge;
+
+                let fingerprints: Vec<i64> = keys
+                    .iter()
+                    .filter_map(|k| k.to_string().parse().ok())
+                    .collect();
+
+                if fingerprints.is_empty() {
+                    return Ok(vec![]);
+                }
+
+                let result = curseforge::match_fingerprints(
+                    fingerprints.clone(),
+                    fetch_semaphore,
+                    pool,
+                )
+                .await?;
+
+                let mut values = vec![];
+                let mut matched_fingerprints: std::collections::HashSet<i64> =
+                    std::collections::HashSet::new();
+
+                for m in result.exact_matches {
+                    if let Some(fp) = m.file.file_fingerprint {
+                        matched_fingerprints.insert(fp);
+                        values.push((
+                            CacheValue::CfFingerprint(CfCachedFingerprint {
+                                fingerprint: fp,
+                                mod_id: m.id,
+                                file_id: m.file.id,
+                            })
+                            .get_entry(),
+                            true,
+                        ));
+                        let cached_file = CfCachedFile::from_cf_file(&m.file);
+                        values.push((
+                            CacheValue::CfFile(cached_file).get_entry(),
+                            false,
+                        ));
+                    }
+                }
+
+                for fp in fingerprints {
+                    if !matched_fingerprints.contains(&fp) {
+                        values.push((
+                            CacheValueType::CfFingerprint
+                                .get_empty_entry(fp.to_string()),
+                            true,
+                        ));
+                    }
+                }
+
+                values
+            }
+
+            CacheValueType::CfCategories => {
+                use crate::api::curseforge;
+
+                let categories =
+                    curseforge::get_categories(None, fetch_semaphore, pool)
+                        .await?;
+
+                let cached: Vec<CfCachedCategory> = categories
+                    .into_iter()
+                    .map(|c| CfCachedCategory {
+                        id: c.id,
+                        name: c.name,
+                        slug: c.slug,
+                        icon_url: c.icon_url,
+                        class_id: c.class_id,
+                        parent_category_id: c.parent_category_id,
+                    })
+                    .collect();
+
+                vec![(CacheValue::CfCategories(cached).get_entry(), true)]
             }
         })
     }

@@ -90,6 +90,7 @@ import _GitGraphIcon from './icons/git-graph.svg?component'
 import _GlassesIcon from './icons/glasses.svg?component'
 import _GlobeIcon from './icons/globe.svg?component'
 import _GridIcon from './icons/grid.svg?component'
+import _GripVerticalIcon from './icons/grip-vertical.svg?component'
 import _HamburgerIcon from './icons/hamburger.svg?component'
 import _HammerIcon from './icons/hammer.svg?component'
 import _HandHelpingIcon from './icons/hand-helping.svg?component'
@@ -316,6 +317,7 @@ export const GitGraphIcon = _GitGraphIcon
 export const GlassesIcon = _GlassesIcon
 export const GlobeIcon = _GlobeIcon
 export const GridIcon = _GridIcon
+export const GripVerticalIcon = _GripVerticalIcon
 export const HamburgerIcon = _HamburgerIcon
 export const HammerIcon = _HammerIcon
 export const HandHelpingIcon = _HandHelpingIcon

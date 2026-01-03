@@ -421,15 +421,27 @@ html {
 	--color-brand: var(--color-orange);
 	--color-brand-highlight: var(--color-orange-highlight);
 	--color-brand-shadow: rgba(255, 163, 71, 0.7);
-	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, var(--color-orange-300) 100%);
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		var(--color-orange-300) 100%
+	);
 }
 
 .light-properties.accent-orange,
 .light-mode.accent-orange,
 .light.accent-orange {
 	--color-brand-shadow: rgba(224, 131, 37, 0.7);
-	--brand-gradient-bg: linear-gradient(0deg, rgba(182, 138, 68, 0.175) 0%, rgba(250, 180, 58, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(182, 138, 68, 0.175) 0%, rgba(225, 158, 36, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(182, 138, 68, 0.175) 0%,
+		rgba(250, 180, 58, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(182, 138, 68, 0.175) 0%,
+		rgba(225, 158, 36, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(64, 48, 32, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(235, 224, 213, 0), #ece0d0 70%);
 }
@@ -437,30 +449,54 @@ html {
 .dark-mode.accent-orange,
 .dark.accent-orange,
 :root[data-theme='dark'].accent-orange {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(35, 25, 14, 0.2) 0%, rgba(137, 100, 55, 0.1) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(35, 25, 14, 0.2) 0%,
+		rgba(137, 100, 55, 0.1) 100%
+	);
 	--brand-gradient-strong-bg: linear-gradient(270deg, #11100d 10%, #1f1813 100%);
 	--brand-gradient-border: rgba(255, 200, 155, 0.08);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(31, 28, 24, 0), #1d1917 80%);
 }
 
 .oled-mode.accent-orange {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(66, 51, 22, 0.15) 0%, rgba(137, 100, 55, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(18, 14, 9, 0.6) 10%, rgba(31, 23, 19, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(66, 51, 22, 0.15) 0%,
+		rgba(137, 100, 55, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(18, 14, 9, 0.6) 10%,
+		rgba(31, 23, 19, 0.5) 100%
+	);
 }
 
 .accent-blue {
 	--color-brand: var(--color-blue);
 	--color-brand-highlight: var(--color-blue-highlight);
 	--color-brand-shadow: rgba(79, 156, 255, 0.7);
-	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, var(--color-blue-300) 100%);
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		var(--color-blue-300) 100%
+	);
 }
 
 .light-properties.accent-blue,
 .light-mode.accent-blue,
 .light.accent-blue {
 	--color-brand-shadow: rgba(31, 104, 192, 0.7);
-	--brand-gradient-bg: linear-gradient(0deg, rgba(68, 118, 182, 0.175) 0%, rgba(58, 150, 250, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(68, 118, 182, 0.175) 0%, rgba(36, 120, 225, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(68, 118, 182, 0.175) 0%,
+		rgba(58, 150, 250, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(68, 118, 182, 0.175) 0%,
+		rgba(36, 120, 225, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(32, 48, 64, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(213, 224, 235, 0), #d0e0ec 70%);
 }
@@ -468,30 +504,54 @@ html {
 .dark-mode.accent-blue,
 .dark.accent-blue,
 :root[data-theme='dark'].accent-blue {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(14, 25, 35, 0.2) 0%, rgba(55, 100, 137, 0.1) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(14, 25, 35, 0.2) 0%,
+		rgba(55, 100, 137, 0.1) 100%
+	);
 	--brand-gradient-strong-bg: linear-gradient(270deg, #0d1011 10%, #131820 100%);
 	--brand-gradient-border: rgba(155, 200, 255, 0.08);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(24, 28, 31, 0), #171a1e 80%);
 }
 
 .oled-mode.accent-blue {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(22, 51, 66, 0.15) 0%, rgba(55, 100, 137, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(9, 14, 18, 0.6) 10%, rgba(19, 23, 31, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(22, 51, 66, 0.15) 0%,
+		rgba(55, 100, 137, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(9, 14, 18, 0.6) 10%,
+		rgba(19, 23, 31, 0.5) 100%
+	);
 }
 
 .accent-red {
 	--color-brand: var(--color-red);
 	--color-brand-highlight: var(--color-red-highlight);
 	--color-brand-shadow: rgba(255, 73, 110, 0.7);
-	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, var(--color-red-300) 100%);
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		var(--color-red-300) 100%
+	);
 }
 
 .light-properties.accent-red,
 .light-mode.accent-red,
 .light.accent-red {
 	--color-brand-shadow: rgba(203, 34, 69, 0.7);
-	--brand-gradient-bg: linear-gradient(0deg, rgba(182, 68, 100, 0.175) 0%, rgba(250, 58, 100, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(182, 68, 100, 0.175) 0%, rgba(225, 36, 80, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(182, 68, 100, 0.175) 0%,
+		rgba(250, 58, 100, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(182, 68, 100, 0.175) 0%,
+		rgba(225, 36, 80, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(64, 32, 40, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(235, 213, 220, 0), #ecd0d8 70%);
 }
@@ -506,23 +566,43 @@ html {
 }
 
 .oled-mode.accent-red {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(66, 22, 35, 0.15) 0%, rgba(137, 55, 75, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(18, 9, 11, 0.6) 10%, rgba(31, 19, 23, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(66, 22, 35, 0.15) 0%,
+		rgba(137, 55, 75, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(18, 9, 11, 0.6) 10%,
+		rgba(31, 19, 23, 0.5) 100%
+	);
 }
 
 .accent-purple {
 	--color-brand: var(--color-purple);
 	--color-brand-highlight: var(--color-purple-highlight);
 	--color-brand-shadow: rgba(199, 138, 255, 0.7);
-	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, var(--color-purple-300) 100%);
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		var(--color-purple-300) 100%
+	);
 }
 
 .light-properties.accent-purple,
 .light-mode.accent-purple,
 .light.accent-purple {
 	--color-brand-shadow: rgba(142, 50, 243, 0.7);
-	--brand-gradient-bg: linear-gradient(0deg, rgba(138, 68, 182, 0.175) 0%, rgba(180, 58, 250, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(138, 68, 182, 0.175) 0%, rgba(158, 36, 225, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(138, 68, 182, 0.175) 0%,
+		rgba(180, 58, 250, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(138, 68, 182, 0.175) 0%,
+		rgba(158, 36, 225, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(48, 32, 64, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(224, 213, 235, 0), #e0d0ec 70%);
 }
@@ -530,30 +610,54 @@ html {
 .dark-mode.accent-purple,
 .dark.accent-purple,
 :root[data-theme='dark'].accent-purple {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(25, 14, 35, 0.2) 0%, rgba(100, 55, 137, 0.1) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(25, 14, 35, 0.2) 0%,
+		rgba(100, 55, 137, 0.1) 100%
+	);
 	--brand-gradient-strong-bg: linear-gradient(270deg, #100d11 10%, #181320 100%);
 	--brand-gradient-border: rgba(200, 155, 255, 0.08);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(28, 24, 31, 0), #1a171e 80%);
 }
 
 .oled-mode.accent-purple {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(51, 22, 66, 0.15) 0%, rgba(100, 55, 137, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(14, 9, 18, 0.6) 10%, rgba(23, 19, 31, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(51, 22, 66, 0.15) 0%,
+		rgba(100, 55, 137, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(14, 9, 18, 0.6) 10%,
+		rgba(23, 19, 31, 0.5) 100%
+	);
 }
 
 .accent-green {
 	--color-brand: var(--color-green);
 	--color-brand-highlight: var(--color-green-highlight);
 	--color-brand-shadow: rgba(27, 217, 106, 0.7);
-	--loading-bar-gradient: linear-gradient(to right, var(--color-brand) 0%, var(--color-green-300) 100%);
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		var(--color-green-300) 100%
+	);
 }
 
 .light-properties.accent-green,
 .light-mode.accent-green,
 .light.accent-green {
 	--color-brand-shadow: rgba(0, 175, 92, 0.7);
-	--brand-gradient-bg: linear-gradient(0deg, rgba(68, 182, 138, 0.175) 0%, rgba(58, 250, 112, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(68, 182, 138, 0.175) 0%, rgba(36, 225, 91, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(68, 182, 138, 0.175) 0%,
+		rgba(58, 250, 112, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(68, 182, 138, 0.175) 0%,
+		rgba(36, 225, 91, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(32, 64, 32, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(213, 235, 224, 0), #d0ece0 70%);
 }
@@ -568,8 +672,16 @@ html {
 }
 
 .oled-mode.accent-green {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(22, 66, 51, 0.15) 0%, rgba(55, 137, 73, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(9, 18, 14, 0.6) 10%, rgba(19, 31, 23, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(22, 66, 51, 0.15) 0%,
+		rgba(55, 137, 73, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(9, 18, 14, 0.6) 10%,
+		rgba(19, 31, 23, 0.5) 100%
+	);
 }
 
 .accent-pink {
@@ -582,8 +694,16 @@ html {
 .light-properties.accent-pink,
 .light-mode.accent-pink,
 .light.accent-pink {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(182, 68, 140, 0.175) 0%, rgba(250, 58, 180, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(182, 68, 140, 0.175) 0%, rgba(225, 36, 150, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(182, 68, 140, 0.175) 0%,
+		rgba(250, 58, 180, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(182, 68, 140, 0.175) 0%,
+		rgba(225, 36, 150, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(64, 32, 50, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(235, 213, 228, 0), #ecd0e2 70%);
 }
@@ -591,15 +711,27 @@ html {
 .dark-mode.accent-pink,
 .dark.accent-pink,
 :root[data-theme='dark'].accent-pink {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(35, 14, 28, 0.2) 0%, rgba(137, 55, 105, 0.1) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(35, 14, 28, 0.2) 0%,
+		rgba(137, 55, 105, 0.1) 100%
+	);
 	--brand-gradient-strong-bg: linear-gradient(270deg, #110d10 10%, #1f131a 100%);
 	--brand-gradient-border: rgba(255, 155, 210, 0.08);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(31, 24, 29, 0), #1d171b 80%);
 }
 
 .oled-mode.accent-pink {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(66, 22, 50, 0.15) 0%, rgba(137, 55, 105, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(18, 9, 14, 0.6) 10%, rgba(31, 19, 26, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(66, 22, 50, 0.15) 0%,
+		rgba(137, 55, 105, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(18, 9, 14, 0.6) 10%,
+		rgba(31, 19, 26, 0.5) 100%
+	);
 }
 
 .accent-cyan {
@@ -612,8 +744,16 @@ html {
 .light-properties.accent-cyan,
 .light-mode.accent-cyan,
 .light.accent-cyan {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(68, 160, 182, 0.175) 0%, rgba(58, 220, 250, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(68, 160, 182, 0.175) 0%, rgba(36, 180, 225, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(68, 160, 182, 0.175) 0%,
+		rgba(58, 220, 250, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(68, 160, 182, 0.175) 0%,
+		rgba(36, 180, 225, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(32, 56, 64, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(213, 230, 235, 0), #d0e8ec 70%);
 }
@@ -621,15 +761,27 @@ html {
 .dark-mode.accent-cyan,
 .dark.accent-cyan,
 :root[data-theme='dark'].accent-cyan {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(14, 30, 35, 0.2) 0%, rgba(55, 120, 137, 0.1) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(14, 30, 35, 0.2) 0%,
+		rgba(55, 120, 137, 0.1) 100%
+	);
 	--brand-gradient-strong-bg: linear-gradient(270deg, #0d1011 10%, #131c1f 100%);
 	--brand-gradient-border: rgba(155, 230, 255, 0.08);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(24, 29, 31, 0), #171c1d 80%);
 }
 
 .oled-mode.accent-cyan {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(22, 55, 66, 0.15) 0%, rgba(55, 120, 137, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(9, 15, 18, 0.6) 10%, rgba(19, 27, 31, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(22, 55, 66, 0.15) 0%,
+		rgba(55, 120, 137, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(9, 15, 18, 0.6) 10%,
+		rgba(19, 27, 31, 0.5) 100%
+	);
 }
 
 .accent-yellow {
@@ -642,8 +794,16 @@ html {
 .light-properties.accent-yellow,
 .light-mode.accent-yellow,
 .light.accent-yellow {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(162, 142, 22, 0.175) 0%, rgba(250, 224, 58, 0.125) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(162, 142, 22, 0.175) 0%, rgba(200, 175, 20, 0.12) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(162, 142, 22, 0.175) 0%,
+		rgba(250, 224, 58, 0.125) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(162, 142, 22, 0.175) 0%,
+		rgba(200, 175, 20, 0.12) 100%
+	);
 	--brand-gradient-border: rgba(64, 56, 12, 0.15);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(240, 235, 210, 0), #f0ebd2 70%);
 }
@@ -651,14 +811,25 @@ html {
 .dark-mode.accent-yellow,
 .dark.accent-yellow,
 :root[data-theme='dark'].accent-yellow {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(40, 35, 10, 0.2) 0%, rgba(137, 120, 30, 0.1) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(40, 35, 10, 0.2) 0%,
+		rgba(137, 120, 30, 0.1) 100%
+	);
 	--brand-gradient-strong-bg: linear-gradient(270deg, #121109 10%, #1f1c0f 100%);
 	--brand-gradient-border: rgba(255, 235, 100, 0.08);
 	--brand-gradient-fade-out-color: linear-gradient(to bottom, rgba(31, 30, 22, 0), #1d1c14 80%);
 }
 
 .oled-mode.accent-yellow {
-	--brand-gradient-bg: linear-gradient(0deg, rgba(66, 58, 15, 0.15) 0%, rgba(137, 120, 30, 0.1) 100%);
-	--brand-gradient-strong-bg: linear-gradient(270deg, rgba(18, 16, 6, 0.6) 10%, rgba(31, 28, 12, 0.5) 100%);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		rgba(66, 58, 15, 0.15) 0%,
+		rgba(137, 120, 30, 0.1) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		rgba(18, 16, 6, 0.6) 10%,
+		rgba(31, 28, 12, 0.5) 100%
+	);
 }
-

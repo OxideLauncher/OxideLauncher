@@ -64,6 +64,7 @@ import Multiselect from 'vue-multiselect'
 
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
 import { trackEvent } from '@/helpers/analytics'
+import { install_file as installCfFile } from '@/helpers/curseforge.ts'
 import { add_project_from_version as installMod } from '@/helpers/profile'
 
 const { handleError } = injectNotificationManager()
@@ -96,20 +97,37 @@ defineExpose({
 
 const install = async () => {
 	installing.value = true
-	await installMod(instance.value.path, selectedVersion.value.id).catch(handleError)
-	installing.value = false
-	onInstall.value(selectedVersion.value.id)
-	incompatibleModal.value.hide()
 
-	trackEvent('ProjectInstall', {
-		loader: instance.value.loader,
-		game_version: instance.value.game_version,
-		id: project.value,
-		version_id: selectedVersion.value.id,
-		project_type: project.value.project_type,
-		title: project.value.title,
-		source: 'ProjectIncompatibilityWarningModal',
-	})
+	const isCurseForge = project.value.source === 'curseforge'
+
+	try {
+		if (isCurseForge) {
+			await installCfFile(
+				instance.value.path,
+				project.value.curseforge_id,
+				selectedVersion.value.curseforge_file_id,
+			)
+		} else {
+			await installMod(instance.value.path, selectedVersion.value.id)
+		}
+
+		onInstall.value(selectedVersion.value.id)
+		incompatibleModal.value.hide()
+
+		trackEvent('ProjectInstall', {
+			loader: instance.value.loader,
+			game_version: instance.value.game_version,
+			id: project.value.id,
+			version_id: selectedVersion.value.id,
+			project_type: project.value.project_type,
+			title: project.value.title,
+			source: isCurseForge ? 'CurseForge' : 'ProjectIncompatibilityWarningModal',
+		})
+	} catch (err) {
+		handleError(err)
+	} finally {
+		installing.value = false
+	}
 }
 </script>
 

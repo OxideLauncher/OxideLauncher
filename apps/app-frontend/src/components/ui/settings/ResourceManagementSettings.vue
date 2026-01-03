@@ -41,6 +41,13 @@ async function purgeCache() {
 		'donation_platforms',
 		'file_update',
 		'search_results',
+		// CurseForge cache types
+		'cf_project',
+		'cf_file',
+		'cf_author',
+		'cf_search_results',
+		'cf_fingerprint',
+		'cf_categories',
 	]).catch(handleError)
 }
 

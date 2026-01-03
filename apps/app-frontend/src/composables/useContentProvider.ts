@@ -1,39 +1,65 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, type Ref, ref } from 'vue'
+
+import type { CfCachedProject, CurseForgeMod } from '@/helpers/curseforge'
+import { classIdToProjectType, getClassSlugFromProjectType, getLoaderNameFromId } from '@/helpers/curseforge'
 
 // Content provider types
 export type ContentProvider = 'modrinth' | 'curseforge'
 
+/**
+ * Minimal normalized search result for displaying in search cards.
+ * Only includes fields genuinely shared between Modrinth and CurseForge.
+ */
 export interface NormalizedSearchResult {
+	// Identifiers
 	id: string
 	slug: string
+	source: ContentProvider
+
+	// Display info
 	title: string
 	description: string
 	icon_url?: string
+	author: string
+
+	// Stats
 	downloads: number
-	follows: number
+	follows: number // thumbsUpCount for CurseForge
+
+	// Classification
 	project_type: string
 	categories: string[]
 	display_categories: string[]
-	author: string
-	date_created: string
-	date_modified: string
+
+	// CurseForge-specific: raw category IDs for lookup
+	cf_category_ids?: number[]
+
+	// Compatibility
 	versions: string[]
 	loaders: string[]
+
+	// Modrinth-specific (only used when source is modrinth)
 	client_side?: string
 	server_side?: string
-	source: ContentProvider
-	// Gallery images for project cards
+
+	// Dates
+	date_created: string
+	date_modified: string
+
+	// Gallery
 	gallery: string[]
 	featured_gallery?: string
 	color?: number
-	// Original data for provider-specific actions
+
+	// Original data - keeps native types for provider-specific actions
 	modrinth_data?: ModrinthSearchResult
 	curseforge_data?: CurseForgeMod
-	// For installation tracking
+
+	// Installation tracking
 	installed?: boolean
 }
 
-// Modrinth types (simplified from existing)
+// Modrinth search result type
 export interface ModrinthSearchResult {
 	project_id: string
 	slug: string
@@ -57,67 +83,10 @@ export interface ModrinthSearchResult {
 	color?: number
 }
 
-// CurseForge types (from curseforge.ts)
-export interface CurseForgeMod {
-	id: number
-	gameId: number
-	name: string
-	slug: string
-	summary: string
-	downloadCount: number
-	thumbsUpCount: number
-	classId?: number
-	categories: CurseForgeCategory[]
-	authors: CurseForgeAuthor[]
-	logo?: CurseForgeAsset
-	screenshots?: CurseForgeAsset[]
-	latestFilesIndexes?: CurseForgeFileIndex[]
-	dateCreated: string
-	dateModified: string
-}
-
-export interface CurseForgeCategory {
-	id: number
-	name: string
-	slug: string
-}
-
-export interface CurseForgeAuthor {
-	id: number
-	name: string
-}
-
-export interface CurseForgeAsset {
-	url: string
-}
-
-export interface CurseForgeFileIndex {
-	gameVersion: string
-	modLoader?: number
-}
-
-// Loader ID to name mapping
-const LOADER_ID_TO_NAME: Record<number, string> = {
-	1: 'forge',
-	2: 'cauldron',
-	3: 'liteloader',
-	4: 'fabric',
-	5: 'quilt',
-	6: 'neoforge',
-}
-
-// Class ID to project type mapping
-const CLASS_ID_TO_PROJECT_TYPE: Record<number, string> = {
-	6: 'mod',
-	4471: 'modpack',
-	12: 'resourcepack',
-	6552: 'shader',
-	6945: 'datapack',
-	5: 'plugin',
-	17: 'world',
-}
-
-// Normalize a Modrinth search result
+/**
+ * Normalize a Modrinth search result for display.
+ * This is a direct mapping since our normalized format is Modrinth-like.
+ */
 export function normalizeModrinthResult(result: ModrinthSearchResult): NormalizedSearchResult {
 	return {
 		id: result.project_id,
@@ -145,35 +114,39 @@ export function normalizeModrinthResult(result: ModrinthSearchResult): Normalize
 	}
 }
 
-// Normalize a CurseForge mod
+/**
+ * Normalize a CurseForge mod for display in search cards.
+ * Keeps cf_id as string for consistency but preserves native data.
+ */
 export function normalizeCurseForgeResult(mod: CurseForgeMod): NormalizedSearchResult {
-	// Extract unique loaders from latest files
+	// Extract loaders from latest files indexes
 	const loaders = new Set<string>()
-	const latestFilesIndexes = mod.latestFilesIndexes || []
-	for (const fileIndex of latestFilesIndexes) {
+	for (const fileIndex of mod.latestFilesIndexes || []) {
 		if (fileIndex.modLoader !== undefined && fileIndex.modLoader !== null) {
-			const loaderName = LOADER_ID_TO_NAME[fileIndex.modLoader]
+			const loaderName = getLoaderNameFromId(fileIndex.modLoader)
 			if (loaderName) {
 				loaders.add(loaderName)
 			}
 		}
 	}
 
-	// Extract unique game versions
+	// Extract game versions from latest files indexes
 	const versions = new Set<string>()
-	for (const fileIndex of latestFilesIndexes) {
+	for (const fileIndex of mod.latestFilesIndexes || []) {
 		if (fileIndex.gameVersion) {
 			versions.add(fileIndex.gameVersion)
 		}
 	}
 
 	// Get project type from class ID
-	const projectType = mod.classId ? CLASS_ID_TO_PROJECT_TYPE[mod.classId] || 'mod' : 'mod'
+	const projectType = classIdToProjectType(mod.classId)
 
 	// Extract gallery from screenshots
 	const gallery = (mod.screenshots ?? []).map((s) => s.url)
 
 	return {
+		// Use cf- prefix only for the normalized ID to differentiate in mixed lists
+		// The native mod.id is preserved in curseforge_data
 		id: `cf-${mod.id}`,
 		slug: mod.slug,
 		title: mod.name,
@@ -196,9 +169,43 @@ export function normalizeCurseForgeResult(mod: CurseForgeMod): NormalizedSearchR
 	}
 }
 
-// Content provider state
+/**
+ * Normalize a cached CurseForge project for display in search cards.
+ * Uses snake_case fields from the cache format.
+ */
+export function normalizeCachedCurseForgeResult(project: CfCachedProject): NormalizedSearchResult {
+	const projectType = classIdToProjectType(project.class_id)
+	const gallery = project.featured_image_url ? [project.featured_image_url] : []
+
+	return {
+		id: `cf-${project.id}`,
+		slug: project.slug,
+		title: project.name,
+		description: project.summary,
+		icon_url: project.logo_url,
+		downloads: project.download_count,
+		follows: project.thumbs_up_count,
+		project_type: projectType,
+		categories: [], // Will be resolved by caller using cf_category_ids
+		display_categories: [],
+		cf_category_ids: project.categories, // Raw IDs for lookup
+		author: project.authors[0]?.name ?? 'Unknown',
+		date_created: project.date_created,
+		date_modified: project.date_modified,
+		versions: [], // Not stored in cached format
+		loaders: [], // Not stored in cached format
+		source: 'curseforge',
+		gallery: gallery,
+		featured_gallery: project.featured_image_url,
+	}
+}
+
+// Content provider state - shared across the app
 const currentProvider: Ref<ContentProvider> = ref('modrinth')
 
+/**
+ * Composable for managing the current content provider (Modrinth vs CurseForge).
+ */
 export function useContentProvider() {
 	const setProvider = (provider: ContentProvider) => {
 		currentProvider.value = provider
@@ -220,40 +227,36 @@ export function useContentProvider() {
 	}
 }
 
-// Helper to get project URL based on provider
+/**
+ * Get the external URL for a project based on its source.
+ */
 export function getProjectUrl(result: NormalizedSearchResult): string {
 	if (result.source === 'modrinth') {
 		return `https://modrinth.com/${result.project_type}/${result.slug}`
 	} else {
-		const cfId = result.curseforge_data?.id
-		return `https://www.curseforge.com/minecraft/${getClassSlug(result.project_type)}/${result.slug}`
+		const classSlug = getClassSlugFromProjectType(result.project_type)
+		return `https://www.curseforge.com/minecraft/${classSlug}/${result.slug}`
 	}
 }
 
-function getClassSlug(projectType: string): string {
-	switch (projectType) {
-		case 'mod':
-			return 'mc-mods'
-		case 'modpack':
-			return 'modpacks'
-		case 'resourcepack':
-			return 'texture-packs'
-		case 'shader':
-			return 'shaders'
-		case 'datapack':
-			return 'data-packs'
-		case 'plugin':
-			return 'bukkit-plugins'
-		default:
-			return 'mc-mods'
-	}
-}
-
-// Helper to get the original ID for installation purposes
+/**
+ * Get the original ID for a project (number for CurseForge, string for Modrinth).
+ */
 export function getOriginalId(result: NormalizedSearchResult): string | number {
 	if (result.source === 'modrinth') {
 		return result.modrinth_data?.project_id ?? result.id
 	} else {
 		return result.curseforge_data?.id ?? parseInt(result.id.replace('cf-', ''))
 	}
+}
+
+/**
+ * Get the CurseForge mod ID from a normalized result.
+ * Returns undefined if not a CurseForge result.
+ */
+export function getCurseForgeId(result: NormalizedSearchResult): number | undefined {
+	if (result.source === 'curseforge' && result.curseforge_data) {
+		return result.curseforge_data.id
+	}
+	return undefined
 }

@@ -47,6 +47,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
 import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
+import dayjs from 'dayjs'
 import { $fetch } from 'ofetch'
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
@@ -65,6 +66,8 @@ import AuthGrantFlowWaitModal from '@/components/ui/modal/AuthGrantFlowWaitModal
 import NavButton from '@/components/ui/NavButton.vue'
 import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
 import RunningAppBar from '@/components/ui/RunningAppBar.vue'
+import QuickActionsSection from '@/components/ui/sidebar/QuickActionsSection.vue'
+import RecentInstancesSection from '@/components/ui/sidebar/RecentInstancesSection.vue'
 import SplashScreen from '@/components/ui/SplashScreen.vue'
 import UpdateToast from '@/components/ui/UpdateToast.vue'
 import URLConfirmModal from '@/components/ui/URLConfirmModal.vue'
@@ -72,7 +75,7 @@ import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
 import { debugAnalytics, initAnalytics, optOutAnalytics, trackEvent } from '@/helpers/analytics'
 import { check_reachable } from '@/helpers/auth.js'
 import { get_user } from '@/helpers/cache.js'
-import { command_listener, warning_listener } from '@/helpers/events.js'
+import { command_listener, profile_listener, warning_listener } from '@/helpers/events.js'
 import { useFetch } from '@/helpers/fetch.js'
 import { cancelLogin, get as getCreds, login, logout } from '@/helpers/mr_auth.ts'
 import { prefetchNews } from '@/helpers/news'
@@ -92,7 +95,7 @@ import {
     provideAppUpdateDownloadProgress,
     subscribeToDownloadProgress,
 } from '@/providers/download-progress.ts'
-import { useError } from '@/store/error.js'
+import { handleSevereError, useError } from '@/store/error.js'
 import { useInstall } from '@/store/install.js'
 import { useLoading, useTheming } from '@/store/state'
 
@@ -434,7 +437,37 @@ onMounted(() => {
 })
 
 const accounts = ref(null)
+const installationModal = ref(null)
+const settingsModal = ref(null)
+
 provide('accountsCard', accounts)
+provide('installationModal', installationModal)
+provide('settingsModal', settingsModal)
+
+const sidebarInstances = ref([])
+
+const sidebarRecentInstances = computed(() =>
+	sidebarInstances.value
+		.filter((x) => x.last_played)
+		.slice()
+		.sort((a, b) => dayjs(b.last_played).diff(dayjs(a.last_played))),
+)
+
+async function fetchSidebarInstances() {
+	try {
+		sidebarInstances.value = await list().catch(handleError)
+	} catch (e) {
+		handleSevereError(e)
+	}
+}
+
+// Initial fetch
+fetchSidebarInstances()
+
+// Listen for profile changes to update sidebar
+profile_listener(async () => {
+	await fetchSidebarInstances()
+})
 
 command_listener(handleCommand)
 async function handleCommand(e) {
@@ -1037,6 +1070,8 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 							<AccountsCard ref="accounts" mode="small" />
 						</suspense>
 					</div>
+					<QuickActionsSection :recent-instances="sidebarRecentInstances" />
+					<RecentInstancesSection :recent-instances="sidebarRecentInstances" />
 				</div>
 			</div>
 		</div>

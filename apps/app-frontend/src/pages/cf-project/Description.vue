@@ -10,16 +10,20 @@ import DOMPurify from 'dompurify';
 import { computed } from 'vue';
 
 const props = defineProps({
-	project: {
+	mod: {
 		type: Object,
 		default: () => ({}),
+	},
+	description: {
+		type: String,
+		default: '',
 	},
 })
 
 const sanitizedDescription = computed(() => {
-	if (!props.project?.body) return ''
+	if (!props.description) return ''
 	// Sanitize the HTML from CurseForge to prevent XSS
-	return DOMPurify.sanitize(props.project.body, {
+	return DOMPurify.sanitize(props.description, {
 		ADD_ATTR: ['target'],
 		ADD_TAGS: ['iframe'],
 		ALLOW_DATA_ATTR: true,

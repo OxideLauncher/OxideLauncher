@@ -28,15 +28,17 @@ import ProviderToggle from '@/components/ui/ProviderToggle.vue'
 import SearchCard from '@/components/ui/SearchCard.vue'
 import {
     getProjectUrl,
-    normalizeCurseForgeResult,
+    normalizeCachedCurseForgeResult,
     useContentProvider,
-    type NormalizedSearchResult,
+    type NormalizedSearchResult
 } from '@/composables/useContentProvider'
 import { get_search_results } from '@/helpers/cache.js'
 import {
-    search_mods as cfSearchMods,
+    get_categories_cached as cfGetCategoriesCached,
+    search_cached as cfSearchCached,
     loaderToModLoaderType,
     projectTypeToClassId,
+    type CfCachedCategory,
     type ModSearchParams,
     type ModsSearchSortField,
 } from '@/helpers/curseforge'
@@ -64,11 +66,23 @@ const projectTypes = computed(() => {
 	return [route.params.projectType as ProjectType]
 })
 
-const [categories, loaders, availableGameVersions] = await Promise.all([
+const [categories, loaders, availableGameVersions, cfCategories] = await Promise.all([
 	get_categories().catch(handleError).then(ref),
 	get_loaders().catch(handleError).then(ref),
 	get_game_versions().catch(handleError).then(ref),
+	cfGetCategoriesCached().catch(handleError).then(ref),
 ])
+
+// Build a lookup map for CurseForge categories by ID
+const cfCategoryMap = computed(() => {
+	const map = new Map<number, CfCachedCategory>()
+	if (cfCategories.value) {
+		for (const cat of cfCategories.value) {
+			map.set(cat.id, cat)
+		}
+	}
+	return map
+})
 
 const tags: Ref<Tags> = computed(() => ({
 	gameVersions: availableGameVersions.value as GameVersion[],
@@ -308,9 +322,9 @@ async function refreshCurseForgeSearch() {
 	}
 
 	try {
-		const cfResults = await cfSearchMods(params)
-		const normalizedHits = cfResults.data.map((mod) => {
-			const normalized = normalizeCurseForgeResult(mod)
+		const cfResults = await cfSearchCached(params)
+		const normalizedHits = cfResults.results.map((project) => {
+			const normalized = normalizeCachedCurseForgeResult(project)
 			// Check installation status
 			if (instance.value && instanceProjects.value) {
 				normalized.installed = Object.values(instanceProjects.value).some(
@@ -322,8 +336,8 @@ async function refreshCurseForgeSearch() {
 
 		return {
 			hits: normalizedHits,
-			total_hits: cfResults.pagination.totalCount,
-			limit: cfResults.pagination.pageSize,
+			total_hits: cfResults.total_count,
+			limit: cfResults.page_size,
 		}
 	} catch (error) {
 		handleError(error)
@@ -679,7 +693,12 @@ previousFilterState.value = JSON.stringify({
 											loader.supported_project_types?.includes(projectType),
 									),
 								]
-							: []
+							: result?.cf_category_ids
+								? result.cf_category_ids
+									.map((id) => cfCategoryMap.get(id))
+									.filter((cat) => cat != null)
+									.map((cat) => ({ name: cat.slug, formatted_name: cat.name }))
+								: []
 					"
 					:installed="
 						result.installed ||
